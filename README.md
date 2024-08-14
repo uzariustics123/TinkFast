@@ -1,8 +1,19 @@
-# React + Vite
-
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+# TinkFast
+#### An E-learning Platform conducting interactive digital quizes intended and dedicated to TCGC(Tangub City Global College)
+## Objectives
+- Implement Login & Registration System
+- Create, Update, Delete Class
+- Allow Joining others within a class via code or class id
+  Example:
+  - Teacher
+  - Student 
+- Create, Update, Delete Quiz
+- Create Quiestions within a quiz form.
+### Quizes and Questions
+- Customize each quizes and questions
+  - Disallow students from starting a quiz unless started by the quiz facilitator.
+  - Set question timer limit.
+  - Creates reports automatically after quiz conducted.
+  - View different matrix, reports, summary for quizes and students statistics.
+  - Edit questions.
+  - Choose different types of questions. e.g: Checkbox, Selection, Text etc.

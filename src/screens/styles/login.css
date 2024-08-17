@@ -1,0 +1,16 @@
+.login-wave {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    left: 0;
+    right: 0;
+}
+
+.container {
+    padding-top: 100px;
+    width: 100%;
+    padding-right: 100px;
+    padding-left: 100px;
+    margin-right: auto;
+    margin-left: auto;
+}

@@ -1,7 +1,7 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
 
-import routes from '../routes/index.js'
+// import routes from '../routes/index.js'
 
 import { Card, withClickOutside, detectElementInDOM } from 'ui-neumorphism'
 

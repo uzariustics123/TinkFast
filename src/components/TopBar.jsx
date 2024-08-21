@@ -23,7 +23,7 @@ class Topbar extends React.Component {
         const isSmall = size === 'sm' || size === 'xs'
         const menuButton = isSmall ? (
             <IconButton onClick={onMenuClick}>
-                <span class="material-icons">star</span>
+                <span className="material-icons">star</span>
             </IconButton>
         ) : null
 
@@ -44,16 +44,16 @@ class Topbar extends React.Component {
                         className='topbar-action mr-1'
                         onClick={() => this.open(npmUrl)}
                     >
-                        <span class="material-icons">star</span>
+                        <span className="material-icons">star</span>
                     </IconButton>
                     <IconButton
                         className='topbar-action'
                         onClick={() => this.open(githubUrl)}
                     >
-                        <span class="material-icons">star</span>
+                        <span className="material-icons">sort</span>
                     </IconButton>
                     <ToggleButton className='topbar-action' onChange={onClick}>
-                        <span class="material-icons">star</span>
+                        <span className="material-icons">list</span>
                     </ToggleButton>
                 </Card>
             </Card>

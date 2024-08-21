@@ -1,7 +1,7 @@
 # TinkFast
 #### An E-learning Platform conducting interactive digital quizes intended and dedicated to TCGC(Tangub City Global College)
 ## Objectives
-- Implement Login & Registration System
+- Implement Login & Registration
 - Create, Update, Delete Class
 - Allow Joining others within a class via code or class id
   Example:
@@ -16,4 +16,4 @@
   - Creates reports automatically after quiz conducted.
   - View different matrix, reports, summary for quizes and students statistics.
   - Edit questions.
-  - Choose different types of questions. e.g: Checkbox, Selection, Text etc.
+  - Choose different types of questions. e.g: Checkbox, Selection, Text, Matching Type, and etc.

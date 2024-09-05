@@ -8,6 +8,11 @@
     max-height: 150px;
 }
 
+.waves-reg {
+    height: 40px;
+    min-height: 40px;
+}
+
 .content {
     position: relative;
     height: 20vh;

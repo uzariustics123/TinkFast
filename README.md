@@ -17,4 +17,7 @@
   - Creates reports automatically after quiz conducted.
   - View different matrix, reports, summary for quizes and students statistics.
   - Edit questions.
-  - Choose different types of questions. e.g: Checkbox, Selection, Text, Matching Type, and etc.
+  - Choose different types of questions.
+    - Matching Type
+    - Essay
+    - Selection

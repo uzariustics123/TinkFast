@@ -1,4 +1,5 @@
-import 'ui-neumorphism/dist/index.css'
+// import 'ui-neumorphism/dist/index.css'
+import './styles/ui-neumorph.css'
 import { Store } from 'react-notifications-component';
 import { useNavigate } from "react-router-dom";
 // import '@material/web/button/filled-button.js';
@@ -10,19 +11,19 @@ import WaveView from '../components/WaveView';
 import { auth, db } from '../components/Firebase';
 import { collection, addDoc } from "firebase/firestore";
 import { Card, CardContent, Subtitle2, H5, Body2, Body1, CardAction, CardHeader, Button, TextField, H1 } from 'ui-neumorphism'
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signOut } from 'firebase/auth';
 import { useEffect, useState } from 'react';
 import './styles/register.css';
 
 function Register() {
     // const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const navigate = useNavigate();
-    useEffect(() => {
-        if (auth.currentUser != null) {
-            navigate('/main');
-            console.log(auth.currentUser);
-        }
-    }, [auth.currentUser]);
+    // useEffect(() => {
+    //     if (auth.currentUser != null) {
+    //         window.location = './main';
+    //         console.log(auth.currentUser);
+    //     }
+    // }, [auth.currentUser]);
 
     let [email, setEmail] = useState('');
     let [studentID, setStudentID] = useState('');
@@ -48,23 +49,12 @@ function Register() {
                             firstname: firstName,
                             lastname: lastName,
                             middlename: midName,
-                            studentID: studentID
+                            studentID: studentID,
+                            uid: user.uid
                         });
                         console.log("User added with ID: ", docRef.id);
-                        Store.addNotification({
-                            title: "Nice!",
-                            message: "Your account has been successfully created. Log in with it!",
-                            type: "success",
-                            container: "top-center",
-                            // animationIn: ["animate__animated", "animate__tada"],
-                            animationIn: ["animate__animated", "animate__rubberBand"],
-                            animationOut: ["animate__animated", "animate__backOutDown"],
-                            dismiss: {
-                                duration: 5000,
-                                onScreen: true
-                            }
-                        });
-                        navigate('/login');
+                        handleLogout(auth);
+
                     } catch (e) {
                         console.error("Error adding user: ", e);
                         Store.addNotification({
@@ -107,6 +97,42 @@ function Register() {
 
         }
     }
+    const handleLogout = (theAuth) => {
+        signOut(theAuth).then(() => {
+            // Sign-out successful.
+            Store.addNotification({
+                title: "Nice!",
+                message: "Your account has been successfully created. Log in with it!",
+                type: "success",
+                container: "top-center",
+                // animationIn: ["animate__animated", "animate__tada"],
+                animationIn: ["animate__animated", "animate__rubberBand"],
+                animationOut: ["animate__animated", "animate__backOutDown"],
+                dismiss: {
+                    duration: 5000,
+                    onScreen: true
+                }
+            });
+            navigate('/login');
+            console.log("User signed out successfully");
+        }).catch((error) => {
+            // An error happened during sign out
+            console.error("Internal error ", error);
+            Store.addNotification({
+                title: "Error: " + error.code,
+                message: error.message,
+                type: "danger",
+                container: "top-center",
+                animationIn: ["animate__animated", "animate__tada"],
+                // animationIn: ["animate__animated", "animate__rubberBand"],
+                animationOut: ["animate__animated", "animate__backOutDown"],
+                dismiss: {
+                    duration: 5000,
+                    onScreen: true
+                }
+            });
+        });
+    };
     const checkValidFields = () => {
         let errMsg = '';
         if (!email.endsWith('@gadtc.edu.ph')) {

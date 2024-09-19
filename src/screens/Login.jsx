@@ -1,13 +1,14 @@
-import 'ui-neumorphism/dist/index.css'
-import { Chip } from 'ui-neumorphism'
+// import 'ui-neumorphism/dist/index.css';
+import './styles/ui-neumorph.css'
+import { Chip } from 'ui-neumorphism';
 import { Card, CardContent, Subtitle2, H5, Body2, Body1, CardAction, CardHeader, Button, TextField, H1 } from 'ui-neumorphism'
 import { Player, Controls } from '@lottiefiles/react-lottie-player';
 import WaveView from '../components/WaveView';
-import { Divider } from 'ui-neumorphism'
+import { Divider } from 'ui-neumorphism';
 import { auth } from '../components/Firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import './styles/login.css'
-import { useState } from 'react';
+import './styles/login.css';
+import { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
 import { Store } from 'react-notifications-component';
 
@@ -19,7 +20,7 @@ function Login(e) {
     const navigate = useNavigate();
     useEffect(() => {
         if (auth.currentUser != null) {
-            navigate('/main');
+            window.location = '/main';
             console.log(auth.currentUser);
         }
     }, [auth.currentUser]);
@@ -29,11 +30,25 @@ function Login(e) {
         e.preventDefault();
         console.log(email, pass);
 
-        if (isValidEmail(email) && isValidPassword(pass)) {
+        if (areValidFields()) {
             signInWithEmailAndPassword(auth, email, pass)
                 .then((userCredential) => {
                     // Signed in 
                     const user = userCredential.user;
+                    Store.addNotification({
+                        title: "Eey!",
+                        message: "Welcome back!",
+                        type: "info",
+                        container: "top-center",
+                        // animationIn: ["animate__animated", "animate__tada"],
+                        animationIn: ["animate__animated", "animate__rubberBand"],
+                        animationOut: ["animate__animated", "animate__backOutDown"],
+                        dismiss: {
+                            duration: 5000,
+                            onScreen: true
+                        }
+                    });
+                    navigate('/main');
                     console.log(user);
                     // ...
                 })
@@ -41,14 +56,49 @@ function Login(e) {
                     const errorCode = error.code;
                     const errorMessage = error.message;
                     console.log(errorCode, errorMessage);
+                    Store.addNotification({
+                        title: "Nope!",
+                        message: 'Wrong email or password.',
+                        type: "danger",
+                        container: "top-center",
+                        animationIn: ["animate__animated", "animate__tada"],
+                        // animationIn: ["animate__animated", "animate__rubberBand"],
+                        animationOut: ["animate__animated", "animate__backOutDown"],
+                        dismiss: {
+                            duration: 5000,
+                            onScreen: true
+                        }
+                    });
                 });
-        } else {
-            console.log('invalid email');
-
         }
     }
-    const isValidEmail = () => {
-        return email.endsWith('@gadtc.edu.ph');
+    const areValidFields = () => {
+        let errorMsg = '';
+        if (email.endsWith('@tinkfast.net') || email.endsWith('@mode.on')) {
+            return true;
+        }
+        if (!email.endsWith('@gadtc.edu.ph')) {
+            errorMsg = 'Invalid email. Please use your correct institutional email';
+        } else if (!pass.length >= 6) {
+            errorMsg = 'Invalid password';
+        }
+        if (errorMsg.length > 0) {
+            Store.addNotification({
+                title: "Oops!",
+                message: errorMsg,
+                type: "danger",
+                container: "bottom-center",
+                animationIn: ["animate__animated", "animate__tada"],
+                // animationIn: ["animate__animated", "animate__rubberBand"],
+                animationOut: ["animate__animated", "animate__backOutDown"],
+                dismiss: {
+                    duration: 5000,
+                    onScreen: true
+                }
+            });
+            return false;
+        }
+        return true;
     }
 
     const isValidPassword = () => {

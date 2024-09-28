@@ -1,3 +1,19 @@
+:root {
+    --animate-duration: 300ms;
+}
+
+/* anim fix */
+div[class^="rnc__notification-container--"] {
+    visibility: hidden;
+    opacity: 0;
+    transition: visibility 0s, opacity 0.3s linear;
+}
+
+div[class^="rnc__notification-container--"]:has(> .rnc__notification) {
+    visibility: visible;
+    opacity: 1;
+}
+
 .classlist-container {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -25,21 +41,19 @@
     padding: 1rem;
     /* max-width: 300px; */
     border-radius: 20px;
-    min-height: 300px;
+    min-height: 19rem;
+    max-height: 22rem;
+    /* box-shadow: 0px 1px 3px #aaaaaa89; */
 }
 
 .class-item:hover {
+    /* margin-top: -5px; */
     transition: .3s ease;
     border-radius: 25px;
-    box-shadow: 5px 5px 9px #d0eadd,
-        -5px -5px 9px #f4ffff !important;
+    box-shadow: 5px 5px 9px #d9d9d9,
+        -5px -5px 9px #ffffff !important;
+    /* box-shadow: 0px 3px 5px #aaaaaa89; */
     border: none;
-}
-
-.class-item:hover .class-img .class-img-filter {
-    background-color: rgb(0, 0, 0, 0.3);
-    transition: .3s ease;
-    backdrop-filter: blur(2px);
 }
 
 .class-img {
@@ -54,7 +68,65 @@
 }
 
 .class-img-filter {
+    transition: .3s ease;
     position: absolute;
     width: 100%;
     height: 100%;
+    background-color: rgb(0, 0, 0, 0.2);
+    backdrop-filter: blur(1px);
+}
+
+.class-item:hover .class-img {
+    margin-top: -3px;
+    transition: .5s ease;
+    box-shadow: 0px 1px 4px rgba(0, 0, 0, .5);
+}
+
+.class-item:hover .class-img .class-img-filter {
+    transition: .3s ease;
+    background-color: rgb(0, 0, 0, 0);
+    backdrop-filter: blur(0);
+}
+
+.class-item-actions {
+    margin-top: 1rem;
+}
+
+.class-item-actions md-assist-chip {
+    /* --md-assist-chip-container-shape-start-end: 20px;
+    --md-assist-chip-container-shape-start-start: 20px;
+    --md-assist-chip-container-shape-end-start: 20px;
+    --md-assist-chip-container-shape-end-end: 20px; */
+    --_container-height: 30px;
+    --_outline-color: var(--md-sys-color-primary);
+    --_label-text-size: .750rem;
+    --_hover-state-layer-color: var(--md-sys-color-primary);
+}
+
+
+
+.trash-class {
+    --md-sys-color-primary: red;
+    --_outline-color: red;
+    --_hover-state-layer-color: red;
+}
+
+.class-title {
+    margin-top: 1rem;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.class-desc {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+#delete-class-dialog #deleteClassBtn {
+    --md-sys-color-primary: red;
+    --_outline-color: red;
+    --_hover-state-layer-color: red;
 }

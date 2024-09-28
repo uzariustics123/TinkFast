@@ -1,11 +1,4 @@
-import '@material/web/button/filled-button.js';
-import '@material/web/button/outlined-button.js';
-import '@material/web/button/elevated-button';
-import '@material/web/chips/chip-set';
-import '@material/web/chips/filter-chip';
-import '@material/web/chips/assist-chip';
-import '@material/web/chips/input-chip';
-import '@material/web/checkbox/checkbox.js';
+import '@material/web/all';
 import { Player, Controls } from '@lottiefiles/react-lottie-player';
 import WaveView from '../components/WaveView';
 import { auth } from '../components/Firebase';
@@ -45,6 +38,17 @@ function Material3() {
                     <md-suggestion-chip label="Suggestion"></md-suggestion-chip>
                 </md-chip-set>
             </div>
+            <md-tabs>
+                <md-primary-tab>Video</md-primary-tab>
+                <md-primary-tab>Photos</md-primary-tab>
+                <md-primary-tab>Audio</md-primary-tab>
+            </md-tabs>
+
+            <md-tabs>
+                <md-secondary-tab>Birds</md-secondary-tab>
+                <md-secondary-tab>Cats</md-secondary-tab>
+                <md-secondary-tab>Dogs</md-secondary-tab>
+            </md-tabs>
         </>
 
 

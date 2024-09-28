@@ -2,7 +2,6 @@ import React, { useEffect, useState, useLayoutEffect } from 'react'
 import './styles/sideDrawer.css';
 import '@material/web/all';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
-import '@material/web/typography/md-typescale-styles.css';
 auth
 // import 'ui-neumorphism/dist/index.css';
 import { Divider } from 'ui-neumorphism';
@@ -12,7 +11,7 @@ import { auth } from './Firebase';
 
 // import { Card, withClickOutside, detectElementInDOM } from 'ui-neumorphism'
 
-function Sidebar({ onMenuItemClick, activeItem }) {
+function ClassSideBar({ onMenuItemClick, activeItem }) {
 
 
     const [currentItem, setItem] = useState('home');
@@ -105,4 +104,4 @@ function Sidebar({ onMenuItemClick, activeItem }) {
 
 }
 
-export default Sidebar;
+export default ClassSideBar;

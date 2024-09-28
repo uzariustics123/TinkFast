@@ -42,6 +42,10 @@ function MainPage() {
     //     }, 1000);
 
     // }, []);
+    const openClassCallback = (classData) => {
+        console.log('classdata', classData);
+
+    }
     const handleCurrentDrawerMenuItem = (currentItem) => {
         if (!(currentItem == 'logout' || currentItem == 'profile' || currentItem == 'settings'))
             setCurrentPage(currentItem);
@@ -55,7 +59,7 @@ function MainPage() {
         <>
             <SideBar onMenuItemClick={handleCurrentDrawerMenuItem} activeItem={currentPage} />
             <div className="main-container">
-                {currentPage === 'home' && <HomePage />}
+                {currentPage === 'home' && <HomePage selectedClassCallback={openClassCallback} />}
                 {/* {currentPage === 'home' ? <HomePage /> : <React.Fragment />} */}
             </div>
         </>

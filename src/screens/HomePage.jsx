@@ -7,7 +7,7 @@ import { collection, addDoc } from "firebase/firestore";
 import { Store } from 'react-notifications-component';
 import ClassList from '../components/ClassList';
 
-function HomePage() {
+function HomePage({ selectedClassCallback }) {
     const currentUser = auth.currentUser;
     const classTitleRef = useRef(null); // Reference to the web component
     const classDescRef = useRef(null);
@@ -26,7 +26,6 @@ function HomePage() {
         const classDescChangeEvent = (event) => {
             setClassDesc(event.target.value);
         };
-
         if (classTitleTF)
             classTitleTF.addEventListener('input', createClassChangeEvent);
         if (classTitleTF)
@@ -36,7 +35,7 @@ function HomePage() {
             // Cleanup event listener
             if (classTitleTF)
                 classTitleTF.removeEventListener('input', createClassChangeEvent);
-            if (classTitleTF)
+            if (classDescTF)
                 classDescTF.removeEventListener('input', classDescChangeEvent);
         };
     }, []);
@@ -160,6 +159,7 @@ function HomePage() {
                 </div>
             </md-dialog>
 
+
             <div className="home-banner">
                 <h1 className='banner-greet'>Welcome Back! </h1>
                 <p className='banner-msg'>Join a class, start a quiz or engage with others by sharing your thoughts. Join the fun of learning!</p>
@@ -175,7 +175,7 @@ function HomePage() {
                     </md-outlined-button>
                 </div>
             </div>
-            <ClassList />
+            <ClassList selectedClassCallback={selectedClassCallback} />
         </>
     );
 }

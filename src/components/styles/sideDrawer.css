@@ -15,16 +15,31 @@ root {
 
 .SideDrawer.mobile {
     @media only screen and (max-width: 600px) {
-        margin-left: -190px;
-        transition: all .1s ease;
+        /* margin-left: -190px; */
+        width: 100px;
+        transition: all .2s ease;
+
+        .drawer-item {
+            gap: 0;
+            align-items: center;
+            justify-items: center;
+            justify-content: center;
+        }
     }
+}
+
+.mobile .drawer-item-title {
+    transition: all ease .3s;
+    display: none;
 }
 
 .brand-name {
     color: var(--primary);
-    font-size: large;
+    font-size: 1.5rem;
     font-weight: bold;
+    color: #147614;
     font-family: 'Montserrat';
+    text-align: center;
     /* text-align: center; */
 }
 
@@ -35,8 +50,9 @@ root {
 }
 
 .menu-sub {
-    font-size: 11px;
-    color: rgb(156, 156, 156);
+    font-size: 10px;
+    /* color: rgb(156, 156, 156); */
+    color: black;
     margin-left: .5rem;
     margin-top: .5rem;
 }
@@ -53,7 +69,7 @@ root {
     font-family: 'Montserrat';
     display: flex;
     padding: .8rem 1rem;
-    border-radius: 18px;
+    border-radius: 25px;
     align-items: center;
     gap: .5rem;
     cursor: pointer;
@@ -62,13 +78,15 @@ root {
 
 }
 
-.drawer-item .material-symbols-outlined {
-    font-size: 18px;
+.drawer-item .material-symbols-rounded {
+    font-size: 25px;
     text-align: center;
     padding: 0;
+    /* color: black; */
 }
 
 .drawer-item .drawer-item-title {
+    color: black;
     text-align: center;
     font-size: 12px;
     padding: 0;
@@ -80,18 +98,20 @@ root {
 
 .drawer-item.active {
     background-color: rgba(33, 255, 103, 0.082) !important;
-    color: #006a00;
+    /* color: #006a00; */
+    color: black;
     font-weight: bold;
     transition: .1s ease-in;
     /* box-shadow: 1px 1px 8px rgba(0, 0, 0, 0.1) !important; */
     border-radius: 25px;
     /* background: linear-gradient(145deg, #cbe5d8, #f2ffff); */
-    box-shadow: 5px 5px 9px #d0eadd,
-        -5px -5px 9px #f4ffff !important;
+    /* box-shadow: 5px 5px 9px #d0eadd,
+        -5px -5px 9px #f4ffff !important; */
 }
 
 .drawer-item:hover {
     transition: .2s ease-in;
-    color: var(--primary);
+    /* color: var(--primary); */
+    color: black;
     box-shadow: 0px 0px 1px rgba(0, 0, 0, 0.1);
 }

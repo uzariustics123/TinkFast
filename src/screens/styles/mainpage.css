@@ -1,15 +1,12 @@
 :root {
-    /* font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif; */
     line-height: 1.5;
     font-weight: 400;
     height: 100%;
     color-scheme: light dark;
-    background-color: var(--light-bg);
     --primary-light: rgba(0, 193, 93) !important;
     --primary: rgba(0, 193, 93) !important;
-    --normal-text-c: rgb(120, 120, 120);
     color: var(--primary);
-
+    background-color: var(--strong-light-bg);
     /* font-synthesis: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
@@ -49,9 +46,14 @@ body {
     margin-left: 180px;
     margin-top: 0;
     padding-top: .5rem;
+    padding-left: 0;
 
     @media only screen and (max-width: 900px) {
         margin-right: auto;
+    }
+
+    @media only screen and (max-width: 600px) {
+        margin-left: 100px;
     }
 }
 

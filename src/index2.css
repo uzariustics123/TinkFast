@@ -5,6 +5,7 @@
   --md-sys-color-primary: #006a00;
   --md-sys-color-on-primary: #FFFFFF;
   --md-sys-color-primary-container: #e5feeb;
+  --md-sys-color-secondary: #f4eddd;
   --md-sys-color-on-primary-container: #002020;
   --md-outlined-button-outline-color: var(--md-sys-color-primary);
   --md-ref-typeface-brand: 'Open Sans';
@@ -14,6 +15,7 @@
   --md-text-button-label-text-font: 'Open Sans';
   --md-ripple-pressed-color: #2c6939;
   --md-dialog-headline-font: 'Montserrat';
+  --md-divider-color: #dddddddd;
 
   --normal-text-c: rgb(120, 120, 120);
 
@@ -1275,7 +1277,7 @@ main {
 }
 
 .main-container {
-  height: 100vh;
+  min-height: 100vh;
   --padding: 32px;
   padding: var(--padding);
   --topbar-height: 99px;

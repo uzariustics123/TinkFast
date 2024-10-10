@@ -3,20 +3,24 @@ import './styles/sideDrawer.css';
 import '@material/web/all';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
 import '@material/web/typography/md-typescale-styles.css';
-auth
 // import 'ui-neumorphism/dist/index.css';
 import { Divider } from 'ui-neumorphism';
-import { auth } from './Firebase';
+import { auth, db } from './Firebase';
+import { collection, getDoc, getDocs, query, where } from 'firebase/firestore';
 // import routes from '../routes/index.js'
-
-
 // import { Card, withClickOutside, detectElementInDOM } from 'ui-neumorphism'
 
+
+
 function Sidebar({ onMenuItemClick, activeItem }) {
-
-
     const [currentItem, setItem] = useState('home');
     const [windowSize, setWindowSize] = useState([0, 0]);
+    const [userData, setUserData] = useState(null);
+    const [firstname, setFirstname] = useState('loading');
+    const [imgUrl, setImgUrl] = useState('');
+    const [lastname, setLastname] = useState('user...');
+    const [userEmail, setEmail] = useState('');
+    const userDBRef = collection(db, "users");
     useLayoutEffect(() => {
         function updateSize() {
             setWindowSize([window.innerWidth, window.innerHeight]);
@@ -29,6 +33,35 @@ function Sidebar({ onMenuItemClick, activeItem }) {
         onMenuItemClick(keyItem);
         if (!(keyItem == 'logout' || keyItem == 'profile' || keyItem == 'settings'))
             setItem(keyItem);
+    }
+    // first load events
+    useEffect(() => {
+        if (auth.currentUser !== null)
+            getUserData();
+    }, [auth.currentUser]);
+    useEffect(() => {
+        if (userData !== null) {
+            setImgUrl(userData.imgUrl);
+            setFirstname(userData.firstname);
+            setLastname(userData.lastname);
+            setEmail(userData.email);
+        }
+    }, [userData]);
+    const getUserData = async () => {
+        const currentUser = auth.currentUser;
+        const filteredQuery = query(userDBRef, where('uid', '==', currentUser.uid));
+        try {
+            const querySnapshot = await getDocs(filteredQuery);
+
+            querySnapshot.forEach((doc) => {
+                setUserData(doc.data());
+                console.log('user data is', doc.data());
+            });
+
+        } catch (error) {
+            console.log(error);
+
+        }
     }
     const handleLogout = () => {
         signOut(auth).then(() => {
@@ -43,7 +76,14 @@ function Sidebar({ onMenuItemClick, activeItem }) {
         <>
             <div className={windowSize[0] < 600 ? 'SideDrawer mobile' : 'SideDrawer'}>
                 <div className="drawer-toggler"></div>
-                <h1 className='brand-name'>{windowSize[0] < 600 ? 'TF' : 'TinkFast'}</h1>
+                {/* <h1 className='brand-name'>{windowSize[0] < 600 ? 'TF' : 'TinkFast'}</h1> */}
+                <div className="user-profile">
+                    <img src={imgUrl} alt="" className="user-img" />
+                    <div className="user-info">
+                        <p className="user-name">{firstname + ' ' + lastname}</p>
+                        <p className="user-email">{userEmail}</p>
+                    </div>
+                </div>
                 <p className='menu-sub'>Pages</p>
                 <ul className="drawer-menu">
                     <li onClick={() => handleItemClick('home')} className={'home' == currentItem ? 'drawer-item active' : 'drawer-item'}>
@@ -91,7 +131,10 @@ function Sidebar({ onMenuItemClick, activeItem }) {
                 <form slot="content" id="logout-dialog-id" method="dialog">
                     <div className="create-dialog">
                         {/* <md-divider></md-divider> */}
-                        <span className="material-symbols-outlined">face</span>
+                        <center>
+                            <img style={{ width: '250px', height: '100px', }} src='./illustrations/logout-illu.svg' className="img-display"></img>
+                        </center>
+                        <br />
                         <p className="md-typescale-body-medium">Are you sure you want to log out?</p>
                     </div>
                 </form>

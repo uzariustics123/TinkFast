@@ -10,11 +10,13 @@ import { auth } from '../components/Firebase';
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useEffect, useState } from 'react';
 import HomePage from './HomePage';
+import ClassView from '../components/ClassView';
 // import '../material-icons.css';
 
 function MainPage() {
     let currentUser = null;
     let uid = null;
+    const [classDocData, setClassDocData] = useState(null);
     const navigate = useNavigate();
     // if (auth.currentUser == null) {
     //     window.location = '/login';
@@ -44,6 +46,8 @@ function MainPage() {
     // }, []);
     const openClassCallback = (classData) => {
         console.log('classdata', classData);
+        setClassDocData(classData);
+        setCurrentPage('class');
 
     }
     const handleCurrentDrawerMenuItem = (currentItem) => {
@@ -60,6 +64,7 @@ function MainPage() {
             <SideBar onMenuItemClick={handleCurrentDrawerMenuItem} activeItem={currentPage} />
             <div className="main-container">
                 {currentPage === 'home' && <HomePage selectedClassCallback={openClassCallback} />}
+                {currentPage === 'class' && <ClassView classData={classDocData} />}
                 {/* {currentPage === 'home' ? <HomePage /> : <React.Fragment />} */}
             </div>
         </>

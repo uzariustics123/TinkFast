@@ -9,6 +9,7 @@ import ClassList from '../components/ClassList';
 
 function HomePage({ selectedClassCallback }) {
     const currentUser = auth.currentUser;
+    const classListRef = useRef(null);
     const classTitleRef = useRef(null); // Reference to the web component
     const classDescRef = useRef(null);
     const [classTitle, setClassTitle] = useState('');
@@ -83,6 +84,9 @@ function HomePage({ selectedClassCallback }) {
                         onScreen: true
                     }
                 });
+                console.log(classListRef.current);
+
+                classListRef.current.getClasses();
             } catch (error) {
                 Store.addNotification({
                     title: "Error: " + error.code,
@@ -161,7 +165,7 @@ function HomePage({ selectedClassCallback }) {
 
 
             <div className="home-banner">
-                <h1 className='banner-greet'>Welcome Back! </h1>
+                <h1 className='banner-greet'>TinkFast </h1>
                 <p className='banner-msg'>Join a class, start a quiz or engage with others by sharing your thoughts. Join the fun of learning!</p>
                 <Player className='home-anim' autoplay loop src="/anims/home-anim.json" />
                 <div className="banner-actions">
@@ -175,14 +179,9 @@ function HomePage({ selectedClassCallback }) {
                     </md-outlined-button>
                 </div>
             </div>
-            <ClassList selectedClassCallback={selectedClassCallback} />
+            <ClassList ref={classListRef} selectedClassCallback={selectedClassCallback} />
         </>
     );
 }
 
 export default HomePage;
-{/* <DotLottieReact
-      src="path/to/animation.lottie"
-      loop
-      autoplay
-    /> */}

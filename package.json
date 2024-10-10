@@ -11,9 +11,9 @@
   },
   "dependencies": {
     "@lottiefiles/react-lottie-player": "^3.5.4",
-    "@material/web": "^2.1.0",
+    "@material/web": "^2.2.0",
     "animate.css": "^4.1.1",
-    "firebase": "^10.13.0",
+    "firebase": "^10.14.0",
     "firebase-admin": "^12.5.0",
     "ldrs": "^1.0.2",
     "material-icons": "^1.13.12",

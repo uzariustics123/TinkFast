@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { auth, db } from "./Firebase";
 import '@material/web/all';
 import '@material/web/typography/md-typescale-styles.css';
@@ -7,7 +7,8 @@ import { getAuth } from "firebase/auth";
 import './styles/classlist.css';
 import { Store } from 'react-notifications-component';
 
-function ClassList({ selectedClassCallback }) {
+const ClassList = forwardRef((props, ref) => {
+    const selectedClassCallback = props.selectedClassCallback;
     const updateClassDescRef = useRef(null);
     const updateClassTitleRef = useRef(null);
     const editDialogElem = useRef(null);
@@ -17,7 +18,7 @@ function ClassList({ selectedClassCallback }) {
     const [updateClassTitle, setUpdateClassTitle] = useState('');
     const [updateClassDesc, setUpdateClassDesc] = useState('');
     const [dialogLoaderStypeVal, setDialogLoaderVal] = useState('none');
-    const [classes, setClasses] = useState([]);
+    const [classes, setClasses] = useState(null);
 
     const classDBRef = collection(db, "classes");
     const classMemberDBRef = collection(db, "classMembers");
@@ -54,6 +55,10 @@ function ClassList({ selectedClassCallback }) {
         if (auth.currentUser !== null)
             getClasses();
     }, [auth.currentUser]);
+    // expose functions to parent
+    useImperativeHandle(ref, () => ({
+        getClasses,
+    }));
     const editClassPrompt = (classData) => {
         document.getElementById('edit-class-dialog').show();
         setUpdatableClassDoc(classData);
@@ -102,17 +107,47 @@ function ClassList({ selectedClassCallback }) {
     }
     const getClasses = async () => {
         const currentUser = auth.currentUser;
-        const filteredQuery = query(classDBRef, where('classOwner', '==', currentUser.uid));
+        const filteredQuery = query(collection(db, 'classMembers'), where('uid', '==', currentUser.uid));
         try {
             const querySnapshot = await getDocs(filteredQuery);
-            // querySnapshot.forEach((doc) => {
-            //     console.log(`${doc.id} => ${doc.data()}`);
-            // });22
-            const itemsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setClasses(itemsData);
+            // const itemsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const classIDs = querySnapshot.docs.map(doc => (doc.data().classId));
+            const classRoles = new Map();
+            querySnapshot.docs.forEach((doc) => {
+                classRoles.set(doc.data().classId, doc.data().classRole);
+            });
+            console.log('class ids ', classIDs);
+            let startingItem = 0;
+            let itemsData = [];
+            const getAdditionalClasses = async () => {
+                try {
+                    const newBatchClass = [];
+                    const classesToGet = classIDs.slice(startingItem, 30);
+                    console.log('classes to get', classesToGet);
+                    const classQuery = query(collection(db, 'classes'), where('__name__', 'in', classesToGet));
+                    const querySnapshot = await getDocs(classQuery);
+
+                    querySnapshot.forEach((doc) => {
+                        newBatchClass.push({ id: doc.id, classRole: classRoles.get(doc.id), ...doc.data() });
+                    });
+
+                    if ((classesToGet.length - 30) > 0) {
+                        startingItem += 30;
+                        getAdditionalClasses();
+                    }
+                    itemsData = [...itemsData, ...newBatchClass];
+                    console.log('classes we got', itemsData);
+
+                    setClasses(itemsData);
+                } catch (error) {
+                    console.log('get teacher user info ', error);
+                }
+            }
+            getAdditionalClasses();
+
         } catch (error) {
             console.log(error);
-
+            setClasses([]);
         }
     }
     const confirmDeleteClass = (classData) => {
@@ -159,7 +194,7 @@ function ClassList({ selectedClassCallback }) {
 
         switch (action) {
             case "view":
-                selectedClassCallback(item)
+                props.selectedClassCallback(item);
                 console.log("Viewing class:", item.className);
                 // Add logic to view the class
                 break;
@@ -181,83 +216,89 @@ function ClassList({ selectedClassCallback }) {
 
     return (
         <>
-            <div className="classlist-container">
-                {classes.map((item, index) => (
-                    <div key={item.id} className="class-item">
-                        <div className="class-img" style={{ backgroundImage: `url('anims/default-class-bg.png')` }}>
-                            <span className="class-img-filter"></span>
+            {classes == null ?
+                <md-linear-progress indeterminate></md-linear-progress>
+                : (classes.size < 1) ? <></>
+                    :
+                    <>
+                        <div className="classlist-container">
+                            {classes.map((item, index) => (
+                                <div key={item.id} className="class-item">
+                                    <div className="class-img" style={{ backgroundImage: `url("./illustrations/working-illu.jpg")` }}>
+                                        <span className="class-img-filter"></span>
+                                    </div>
+                                    <p className="class-title">{item.className}</p>
+                                    <p style={{ fontSize: '13px' }} className="class-desc md-typescale-body-small">{item.classDesc}</p>
+                                    <div className="class-item-actions">
+                                        <md-chip-set>
+                                            <md-assist-chip onClick={() => handleChipClick(item, "view")} label="View">
+                                                <md-icon slot="icon">open_run</md-icon>
+                                            </md-assist-chip>
+                                            <md-assist-chip onClick={() => handleChipClick(item, "edit")} label="Edit">
+                                                <md-icon slot="icon">edit</md-icon>
+                                            </md-assist-chip>
+                                            <md-assist-chip class="trash-class" onClick={() => handleChipClick(item, "delete")} label="Delete">
+                                                <md-icon slot="icon">delete</md-icon>
+                                            </md-assist-chip>
+                                        </md-chip-set>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                        <p className="class-title">{item.className}</p>
-                        <p style={{ fontSize: '13px' }} className="class-desc md-typescale-body-small">{item.classDesc}</p>
-                        <div className="class-item-actions">
-                            <md-chip-set>
-                                <md-assist-chip onClick={() => handleChipClick(item, "view")} label="View">
-                                    <md-icon slot="icon">open_run</md-icon>
-                                </md-assist-chip>
-                                <md-assist-chip onClick={() => handleChipClick(item, "edit")} label="Edit">
-                                    <md-icon slot="icon">edit</md-icon>
-                                </md-assist-chip>
-                                <md-assist-chip class="trash-class" onClick={() => handleChipClick(item, "delete")} label="Delete">
-                                    <md-icon slot="icon">delete</md-icon>
-                                </md-assist-chip>
-                            </md-chip-set>
-                        </div>
-                    </div>
-                ))}
-            </div>
 
-            <md-dialog id="edit-class-dialog" >
-                <div slot="headline">
-                    Update class
-                </div>
-                <form slot="content" id="edit-class-form" method="dialog">
-                    <div className="create-dialog">
-                        <md-outlined-text-field
-                            required
-                            style={{ width: '100%' }}
-                            type="text"
-                            ref={updateClassTitleRef}
-                            label="Class Name">
-                            <md-icon slot="leading-icon">school</md-icon>
-                        </md-outlined-text-field>
-                        <br />
-                        <br />
-                        <md-outlined-text-field
-                            type="textarea"
-                            row="5"
-                            ref={updateClassDescRef}
-                            style={{ width: '100%' }}
-                            label="Class Description">
-                            {/* <md-icon slot="leading-icon">description</md-icon> */}
-                        </md-outlined-text-field>
-                    </div>
-                    <md-linear-progress style={{ display: dialogLoaderStypeVal }} indeterminate></md-linear-progress>
-                </form>
-                <div slot="actions">
-                    <md-text-button type='button' onClick={() => document.getElementById('edit-class-dialog').close()} value='cancel'>Cancel</md-text-button>
-                    <md-text-button type='submit' onClick={updateClassCommit} >Update</md-text-button>
-                </div>
-            </md-dialog>
+                        <md-dialog id="edit-class-dialog" >
+                            <div slot="headline">
+                                Update class
+                            </div>
+                            <form slot="content" id="edit-class-form" method="dialog">
+                                <div className="create-dialog">
+                                    <md-outlined-text-field
+                                        required
+                                        style={{ width: '100%' }}
+                                        type="text"
+                                        ref={updateClassTitleRef}
+                                        label="Class Name">
+                                        <md-icon slot="leading-icon">school</md-icon>
+                                    </md-outlined-text-field>
+                                    <br />
+                                    <br />
+                                    <md-outlined-text-field
+                                        type="textarea"
+                                        row="5"
+                                        ref={updateClassDescRef}
+                                        style={{ width: '100%' }}
+                                        label="Class Description">
+                                        {/* <md-icon slot="leading-icon">description</md-icon> */}
+                                    </md-outlined-text-field>
+                                </div>
+                                <md-linear-progress style={{ display: dialogLoaderStypeVal }} indeterminate></md-linear-progress>
+                            </form>
+                            <div slot="actions">
+                                <md-text-button type='button' onClick={() => document.getElementById('edit-class-dialog').close()} value='cancel'>Cancel</md-text-button>
+                                <md-text-button type='submit' onClick={updateClassCommit} >Update</md-text-button>
+                            </div>
+                        </md-dialog>
 
-            <md-dialog id="delete-class-dialog" >
-                <div slot="headline">
-                    <div className="material-symbols-outlined" style={{ color: 'red', fontSize: '25px' }}>info</div>
-                    <br />
-                    <p>Delete Class</p>
-                </div>
-                <form slot="content" id="delete-class-dialog-id" method="dialog">
-                    <div className="create-dialog">
-                        {/* <md-divider></md-divider> */}
+                        <md-dialog id="delete-class-dialog" >
+                            <div slot="headline">
+                                <div className="material-symbols-outlined" style={{ color: 'red', fontSize: '25px' }}>info</div>
+                                <br />
+                                <p>Delete Class</p>
+                            </div>
+                            <form slot="content" id="delete-class-dialog-id" method="dialog">
+                                <div className="create-dialog">
+                                    {/* <md-divider></md-divider> */}
 
-                        <p className="md-typescale-body-medium">Are you sure you want to delete "{deletableClassDoc !== null ? deletableClassDoc.className : ''}"</p>
-                    </div>
-                </form>
-                <div slot="actions">
-                    <md-text-button form="delete-class-dialog-id" value="cancel">Cancel</md-text-button>
-                    <md-text-button id="deleteClassBtn" onClick={deleteClassDocument} value="ok">Delete</md-text-button>
-                </div>
-            </md-dialog>
+                                    <p className="md-typescale-body-medium">Are you sure you want to delete "{deletableClassDoc !== null ? deletableClassDoc.className : ''}"</p>
+                                </div>
+                            </form>
+                            <div slot="actions">
+                                <md-text-button form="delete-class-dialog-id" value="cancel">Cancel</md-text-button>
+                                <md-text-button id="deleteClassBtn" onClick={deleteClassDocument} value="ok">Delete</md-text-button>
+                            </div>
+                        </md-dialog>
+                    </>}
         </>
     );
-}
+});
 export default ClassList;

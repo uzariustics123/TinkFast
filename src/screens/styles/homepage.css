@@ -3,12 +3,11 @@
     color: #2c6939;
     height: 15rem;
     padding: 1rem;
-    background: linear-gradient(60deg, rgba(33, 255, 103, 0.364) 0%, rgba(197, 255, 226, 0.403) 100%);
+    background: linear-gradient(60deg, #f4eddd 0%, rgba(255, 254, 197, 0.403) 100%);
     /* background-color: var(--accent); */
     border-radius: 20px;
     /* box-shadow: 6px 6px 11px #cacaca,
         -6px -6px 11px #ffffff; */
-    font-family: 'Montserrat';
 
 
 }

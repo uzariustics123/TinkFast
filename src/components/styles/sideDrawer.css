@@ -8,7 +8,7 @@ root {
     top: 0;
     left: 0;
     position: fixed;
-    width: 180px;
+    width: 200px;
     height: 100%;
     padding: 1rem 1rem 1rem 1rem;
 }
@@ -37,7 +37,7 @@ root {
     color: var(--primary);
     font-size: 1.5rem;
     font-weight: bold;
-    color: #147614;
+    color: var(--md-sys-color-primary);
     font-family: 'Montserrat';
     text-align: center;
     /* text-align: center; */
@@ -86,7 +86,6 @@ root {
 }
 
 .drawer-item .drawer-item-title {
-    color: black;
     text-align: center;
     font-size: 12px;
     padding: 0;
@@ -97,9 +96,9 @@ root {
 }
 
 .drawer-item.active {
-    background-color: rgba(33, 255, 103, 0.082) !important;
+    background-color: #f4eddd !important;
     /* color: #006a00; */
-    color: black;
+    color: var(--md-sys-color-primary);
     font-weight: bold;
     transition: .1s ease-in;
     /* box-shadow: 1px 1px 8px rgba(0, 0, 0, 0.1) !important; */
@@ -114,4 +113,50 @@ root {
     /* color: var(--primary); */
     color: black;
     box-shadow: 0px 0px 1px rgba(0, 0, 0, 0.1);
+}
+
+.user-profile {
+    padding: 0;
+    display: flex;
+    flex-direction: row;
+    margin-bottom: 1rem;
+    gap: .5rem;
+    justify-items: center;
+    font-family: 'Open Sans';
+    overflow-x: hidden;
+
+    @media only screen and (max-width: 600px) {
+        flex-wrap: wrap;
+        gap: 0;
+    }
+
+    .user-info {
+        display: flex;
+        flex-direction: column;
+        justify-items: center;
+        place-content: center;
+        gap: -0;
+    }
+
+    .user-name {
+        color: black;
+        padding: 0;
+        font-size: 11px;
+        text-transform: capitalize;
+    }
+
+    .user-email {
+        padding: 0;
+        font-weight: bold;
+        color: rgb(1, 166, 249);
+        font-size: 10px;
+    }
+}
+
+.user-img {
+    width: 40px;
+    height: 40px;
+    border-radius: 25px;
+    border: 2px solid rgb(1, 166, 249);
+
 }

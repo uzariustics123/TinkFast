@@ -1,0 +1,9 @@
+.find-people-input {
+    outline: none;
+    background: none;
+    color: var(--normal-text-c);
+    border: none;
+    border-bottom: 1px solid grey;
+    width: 100%;
+    margin-bottom: .5rem;
+}

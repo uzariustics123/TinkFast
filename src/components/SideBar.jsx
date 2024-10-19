@@ -125,9 +125,9 @@ function Sidebar({ onMenuItemClick, activeItem }) {
 
             </div>
             <md-dialog id="logout-dialog" >
-                <div slot="headline">
+                {/* <div slot="headline">
                     Logout
-                </div>
+                </div> */}
                 <form slot="content" id="logout-dialog-id" method="dialog">
                     <div className="create-dialog">
                         {/* <md-divider></md-divider> */}

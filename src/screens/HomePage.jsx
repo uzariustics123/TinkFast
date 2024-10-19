@@ -84,7 +84,7 @@ function HomePage({ selectedClassCallback }) {
                         onScreen: true
                     }
                 });
-                console.log(classListRef.current);
+                // console.log(classListRef.current);
 
                 classListRef.current.getClasses();
             } catch (error) {

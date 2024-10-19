@@ -6,6 +6,7 @@ import { collection, addDoc, query, getDoc, getDocs, where } from "firebase/fire
 import { Store } from 'react-notifications-component';
 import './styles/classView.css';
 import PeopleList from './PeopleList';
+import QuizesList from './QuizesList';
 
 function ClassView(props) {
 
@@ -76,9 +77,8 @@ function ClassView(props) {
                         </md-primary-tab>
                     </md-tabs>
                     {selectedTab === 0 ?
-                        <md-fab label="Add quiz" variant="primary" aria-label="Edit">
-                            <md-icon slot="icon">edit</md-icon>
-                        </md-fab> : <></>
+                        <QuizesList />
+                        : <></>
                     }
                     {selectedTab === 1 ?
                         <PeopleList userData={userData} classData={classData} />

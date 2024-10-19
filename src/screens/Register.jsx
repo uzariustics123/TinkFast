@@ -52,7 +52,7 @@ function Register() {
                             studentID: studentID,
                             uid: user.uid,
                             email: email,
-                            imgUrl: 'https://w7.pngwing.com/pngs/832/40/png-transparent-female-avatar-girl-face-woman-user-flat-classy-users-icon.png'
+                            imgUrl: 'https://www.shareicon.net/data/2017/01/06/868320_people_512x512.png'
                         });
                         console.log("User added with ID: ", docRef.id);
                         handleLogout(auth);

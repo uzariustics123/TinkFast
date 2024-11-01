@@ -14,3 +14,9 @@
     justify-self: center;
     place-self: center; */
 }
+
+.add-quiz-fab {
+    position: fixed;
+    bottom: 1rem;
+    right: 2rem;
+}

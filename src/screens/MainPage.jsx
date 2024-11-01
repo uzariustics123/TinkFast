@@ -6,17 +6,23 @@
 import './styles/mainpage.css';
 import SideBar from '../components/SideBar';
 import { useNavigate } from 'react-router-dom';
-import { auth } from '../components/Firebase';
+import { auth, db } from '../components/Firebase';
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import HomePage from './HomePage';
 import ClassView from '../components/ClassView';
+import { OpenedClass } from '../AppContext';
+import { AppContext } from '../AppContext';
+import { collection, addDoc, query, where, getDoc, getDocs } from "firebase/firestore";
+import { Snackbar, CircularProgress, Backdrop } from '@mui/material';
 // import '../material-icons.css';
 
 function MainPage() {
     let currentUser = null;
     let uid = null;
     const [classDocData, setClassDocData] = useState(null);
+    const [openedClass, setOpenedClass] = useState(null);
+    const { currentUserData, setCurrentUserData, backdropOpen, setBackdropOpen, openSnackbar, setSnackbarOpen, snackbarMsg, setSnackbarMsg } = useContext(AppContext);
     const navigate = useNavigate();
     // if (auth.currentUser == null) {
     //     window.location = '/login';
@@ -55,18 +61,58 @@ function MainPage() {
             setCurrentPage(currentItem);
         else
             console.log('item is ', currentItem);
-        console.log('current user', currentUser);
+        console.log('current user', currentUserData);
+
+    }
+    useEffect(() => {
+        console.log('openedClass', openedClass);
+
+        if (auth.currentUser !== null)
+            getUserData();
+    }, [auth.currentUser]);
+    const getUserData = async () => {
+        const currentUser = auth.currentUser;
+        const filteredQuery = query(collection(db, 'users'), where('uid', '==', currentUser.uid));
+        try {
+            const querySnapshot = await getDocs(filteredQuery);
+            querySnapshot.forEach((doc) => {
+                setCurrentUserData({ currentUser, ...doc.data() });
+                console.log();
+
+            });
+
+        } catch (error) {
+            console.log('error getting user info', error);
+        }
+    };
+    const handleSnackbarClose = () => {
+        setSnackbarMsg('');
+        setSnackbarOpen(false);
 
     }
 
     return (
         <>
-            <SideBar onMenuItemClick={handleCurrentDrawerMenuItem} activeItem={currentPage} />
-            <div className="main-container">
-                {currentPage === 'home' && <HomePage selectedClassCallback={openClassCallback} />}
-                {currentPage === 'class' && <ClassView classData={classDocData} />}
-                {/* {currentPage === 'home' ? <HomePage /> : <React.Fragment />} */}
-            </div>
+            <Backdrop
+                sx={(theme) => ({ color: '#fff', zIndex: theme.zIndex.drawer + 1 })}
+                open={backdropOpen}
+                onClick={() => { }}>
+                <CircularProgress color="inherit" />
+            </Backdrop>
+            <OpenedClass.Provider value={{ openedClass, setOpenedClass }}>
+                <SideBar onMenuItemClick={handleCurrentDrawerMenuItem} activeItem={currentPage} />
+                <div className="main-container">
+                    {currentPage === 'home' && <HomePage selectedClassCallback={openClassCallback} />}
+                    {currentPage === 'class' && <ClassView />}
+                    {/* {currentPage === 'home' ? <HomePage /> : <React.Fragment />} */}
+                </div>
+            </OpenedClass.Provider>
+            <Snackbar
+                open={openSnackbar}
+                autoHideDuration={6000}
+                onClose={handleSnackbarClose}
+                message={snackbarMsg}
+            />
         </>
 
 

@@ -1,4 +1,4 @@
-import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import React, { forwardRef, useContext, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { auth, db } from "./Firebase";
 import '@material/web/all';
 import '@material/web/typography/md-typescale-styles.css';
@@ -6,13 +6,23 @@ import { collection, deleteDoc, doc, getDoc, getDocs, query, updateDoc, where } 
 import { getAuth } from "firebase/auth";
 import './styles/classlist.css';
 import { Store } from 'react-notifications-component';
+import Chip from '@mui/material/Chip';
+import Stack from '@mui/material/Stack';
+import CircularProgress from '@mui/material/CircularProgress';
+import { Button, Snackbar, Dialog, DialogContent, DialogActions, DialogContentText, DialogTitle, TextField } from "@mui/material";
+import { AppContext, OpenedClass } from "../AppContext";
+
 
 const ClassList = forwardRef((props, ref) => {
     const selectedClassCallback = props.selectedClassCallback;
     const updateClassDescRef = useRef(null);
     const updateClassTitleRef = useRef(null);
     const editDialogElem = useRef(null);
+    const { openedClass, setOpenedClass } = useContext(OpenedClass);
 
+    const { backdropOpen, setBackdropOpen, openSnackbar, setSnackbarOpen, snackbarMsg, setSnackbarMsg } = useContext(AppContext);
+    // const [openSnackbar, setSnackbarOpen] = useState(false);
+    // const [snackbarMsg, setSnackbarMsg] = useState('');
     const [updatableClassDoc, setUpdatableClassDoc] = useState(null);
     const [deletableClassDoc, setDeletableClassDoc] = useState(null);
     const [updateClassTitle, setUpdateClassTitle] = useState('');
@@ -105,6 +115,35 @@ const ClassList = forwardRef((props, ref) => {
             document.getElementById('edit-class-dialog').close();
         }
     }
+    const acceptClassInvitation = async (classItemData) => {
+        setBackdropOpen(true);
+        try {
+            const docRef = doc(db, "classMembers", classItemData.membershipDoc);
+            await updateDoc(docRef, {
+                status: 'accepted'
+            });
+            setBackdropOpen(false);
+            setSnackbarMsg('Class invitation accepted');
+            setSnackbarOpen(true);
+            console.log('accepted');
+            getClasses();
+        } catch (error) {
+            console.error("Error accepting class: ", error);
+        }
+    }
+    const declineClassInvitation = async (classItemData) => {
+        setBackdropOpen(true);
+        try {
+            const docRef = doc(db, "classMembers", classItemData.membershipDoc);
+            await deleteDoc(docRef);
+            setBackdropOpen(false);
+            setSnackbarMsg('Class invitation declined');
+            setSnackbarOpen(true);
+            getClasses();
+        } catch (error) {
+            console.error("Error declining class: ", error);
+        }
+    }
     const getClasses = async () => {
         const currentUser = auth.currentUser;
         const filteredQuery = query(collection(db, 'classMembers'), where('uid', '==', currentUser.uid));
@@ -113,8 +152,10 @@ const ClassList = forwardRef((props, ref) => {
             // const itemsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             const classIDs = querySnapshot.docs.map(doc => (doc.data().classId));
             const classRoles = new Map();
+            const classMembershipData = [];
             querySnapshot.docs.forEach((doc) => {
                 classRoles.set(doc.data().classId, doc.data().classRole);
+                classMembershipData.push({ membershipDoc: doc.id, ...doc.data() });
             });
             console.log('class ids ', classIDs);
             let startingItem = 0;
@@ -128,7 +169,8 @@ const ClassList = forwardRef((props, ref) => {
                     const querySnapshot = await getDocs(classQuery);
 
                     querySnapshot.forEach((doc) => {
-                        newBatchClass.push({ id: doc.id, classRole: classRoles.get(doc.id), ...doc.data() });
+                        let foundMembershipData = classMembershipData.find(foundItem => foundItem.classId === doc.id);
+                        newBatchClass.push({ id: doc.id, classRole: classRoles.get(doc.id), ...doc.data(), ...foundMembershipData });
                     });
 
                     if ((classesToGet.length - 30) > 0) {
@@ -138,12 +180,13 @@ const ClassList = forwardRef((props, ref) => {
                     itemsData = [...itemsData, ...newBatchClass];
                     console.log('classes we got', itemsData);
 
-                    setClasses(itemsData);
+
                 } catch (error) {
                     console.log('get teacher user info ', error);
                 }
             }
-            getAdditionalClasses();
+            await getAdditionalClasses();
+            setClasses(itemsData);
 
         } catch (error) {
             console.log(error);
@@ -195,6 +238,7 @@ const ClassList = forwardRef((props, ref) => {
         switch (action) {
             case "view":
                 props.selectedClassCallback(item);
+                setOpenedClass(item);
                 console.log("Viewing class:", item.className);
                 // Add logic to view the class
                 break;
@@ -218,7 +262,8 @@ const ClassList = forwardRef((props, ref) => {
         <>
             {classes == null ?
                 <md-linear-progress indeterminate></md-linear-progress>
-                : (classes.size < 1) ? <></>
+                : (classes.length < 1) ?
+                    <><center><p style={{ fontSize: '13px', color: 'grey', marginTop: '5rem' }} className="class-desc md-typescale-body-small">No classes found. Join or Create one.</p></center></>
                     :
                     <>
                         <div className="classlist-container">
@@ -230,21 +275,33 @@ const ClassList = forwardRef((props, ref) => {
                                     <p className="class-title">{item.className}</p>
                                     <p style={{ fontSize: '13px' }} className="class-desc md-typescale-body-small">{item.classDesc}</p>
                                     <div className="class-item-actions">
-                                        <md-chip-set>
-                                            <md-assist-chip onClick={() => handleChipClick(item, "view")} label="View">
-                                                <md-icon slot="icon">open_run</md-icon>
-                                            </md-assist-chip>
-                                            <md-assist-chip onClick={() => handleChipClick(item, "edit")} label="Edit">
-                                                <md-icon slot="icon">edit</md-icon>
-                                            </md-assist-chip>
-                                            <md-assist-chip class="trash-class" onClick={() => handleChipClick(item, "delete")} label="Delete">
-                                                <md-icon slot="icon">delete</md-icon>
-                                            </md-assist-chip>
-                                        </md-chip-set>
+                                        {
+                                            item.status == 'invited' ?
+                                                <Stack direction="row" spacing={1}>
+                                                    <Chip onClick={() => acceptClassInvitation(item)} label="Accept" color="success" variant="outlined" />
+                                                    <Chip onClick={() => { declineClassInvitation(item) }} label='Decline' color="info" variant="outlined" />
+                                                </Stack> :
+
+                                                <md-chip-set>
+                                                    <md-assist-chip onClick={() => handleChipClick(item, "view")} label='Open'>
+                                                        <md-icon slot="icon">open_run</md-icon>
+                                                    </md-assist-chip>
+                                                    <md-assist-chip onClick={() => handleChipClick(item, "edit")} label="Edit">
+                                                        <md-icon slot="icon">edit</md-icon>
+                                                    </md-assist-chip>
+                                                    <md-assist-chip class="trash-class" onClick={() => handleChipClick(item, "delete")} label="Delete">
+                                                        <md-icon slot="icon">delete</md-icon>
+                                                    </md-assist-chip>
+                                                </md-chip-set>
+
+                                        }
+
                                     </div>
                                 </div>
                             ))}
                         </div>
+
+
 
                         <md-dialog id="edit-class-dialog" >
                             <div slot="headline">
@@ -298,7 +355,9 @@ const ClassList = forwardRef((props, ref) => {
                             </div>
                         </md-dialog>
                     </>}
+
         </>
     );
+
 });
 export default ClassList;

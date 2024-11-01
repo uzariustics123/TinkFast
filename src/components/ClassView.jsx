@@ -1,60 +1,41 @@
 import { Player, Controls } from '@lottiefiles/react-lottie-player';
 import '@material/web/all';
-import { useState, useLayoutEffect, useEffect, useRef } from 'react';
+import { useState, useLayoutEffect, useEffect, useRef, useContext } from 'react';
 import { auth, db } from '../components/Firebase';
 import { collection, addDoc, query, getDoc, getDocs, where } from "firebase/firestore";
 import { Store } from 'react-notifications-component';
 import './styles/classView.css';
 import PeopleList from './PeopleList';
 import QuizesList from './QuizesList';
+import { AppContext, OpenedClass } from '../AppContext';
 
 function ClassView(props) {
-
-    const [classData, setClassData] = useState(null);
     const [userData, setUserData] = useState(null);
     const [selectedTab, setSelectedTab] = useState(0);
+
+    const { openedClass, setOpenedClass } = useContext(OpenedClass);
+    const { currentUserData, currentUserInfo, setCurrentUserInfo, setCurrentUserData } = useContext(AppContext);
+
     const handleTabChange = (index) => {
         // const index = event.target.selected;
         console.log('selected is', index);
 
         setSelectedTab(index);
     };
-    useEffect(() => {
-        if (auth.currentUser !== null)
-            getUserData();
-    }, [auth.currentUser]);
-    useEffect(() => {
-        setClassData(props.classData);
-        // setUserData(props.currentUser);
-        console.log('data ', classData, userData);
 
-    }, [props.classData]);
-    const getUserData = async () => {
-        const currentUser = auth.currentUser;
-        const filteredQuery = query(collection(db, 'users'), where('uid', '==', currentUser.uid));
-        try {
-            const querySnapshot = await getDocs(filteredQuery);
-            querySnapshot.forEach((doc) => {
-                setUserData(doc.data());
-            });
-
-        } catch (error) {
-            console.log(error);
-        }
-    };
 
     return (
 
         <>
-            {classData !== null && userData !== null ?
+            {openedClass !== null && currentUserData !== null ?
                 <div className='main-class-container'>
 
                     <div className="class-banner">
                         <div className="class-img-banner" style={{ backgroundImage: 'url("./illustrations/collab-illu.jpg")' }}>
                             <div className="class-img-filter"></div>
                         </div>
-                        <h1 className='class-banner-title'>{props.classData.className}</h1>
-                        <p className='class-banner-desc'>{props.classData.classDesc}</p>
+                        <h1 className='class-banner-title'>{openedClass.className}</h1>
+                        <p className='class-banner-desc'>{openedClass.classDesc}</p>
                         <div className="class-banner-actions">
                             <md-outlined-button>
                                 <span slot='icon' className="material-symbols-outlined">edit</span>
@@ -81,7 +62,7 @@ function ClassView(props) {
                         : <></>
                     }
                     {selectedTab === 1 ?
-                        <PeopleList userData={userData} classData={classData} />
+                        <PeopleList userData={currentUserData} classData={openedClass} />
                         : <></>
                     }
                     {selectedTab === 2 ? 'tab 3' : <></>}

@@ -1,23 +1,32 @@
 import './styles/homepage.css';
 import { Player, Controls } from '@lottiefiles/react-lottie-player';
 import '@material/web/all';
-import { useState, useLayoutEffect, useEffect, useRef } from 'react';
+import { useState, useLayoutEffect, useEffect, useRef, useContext } from 'react';
 import { auth, db } from '../components/Firebase';
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, query, where, getDoc, getDocs, doc } from "firebase/firestore";
 import { Store } from 'react-notifications-component';
 import ClassList from '../components/ClassList';
+import { Button, Snackbar, Dialog, DialogContent, DialogActions, DialogContentText, DialogTitle, TextField } from "@mui/material";
+import { AppContext, OpenedClass } from '../AppContext';
 
 function HomePage({ selectedClassCallback }) {
     const currentUser = auth.currentUser;
     const classListRef = useRef(null);
     const classTitleRef = useRef(null); // Reference to the web component
     const classDescRef = useRef(null);
+    const [joinLoading, setJoinLoading] = useState(false);
+    const { openedClass, setOpenedClass } = useContext(OpenedClass);
+    const { currentUserData, setCurrentUserData, backdropOpen, setBackdropOpen, openSnackbar, setSnackbarOpen, snackbarMsg, setSnackbarMsg } = useContext(AppContext);
+
+    const [joinClassDialogOpen, setJoinClassDialogOpen] = useState(false);
     const [classTitle, setClassTitle] = useState('');
     const [classDesc, setClassDesc] = useState('');
     const classDBRef = collection(db, "classes");
     const classMemberDBRef = collection(db, "classMembers");
 
     useEffect(() => {
+        console.log('currentUserData', currentUserData);
+
         const classTitleTF = classTitleRef.current;
         const classDescTF = classTitleRef.current;
         // Adding the native event listener for input changes
@@ -129,8 +138,54 @@ function HomePage({ selectedClassCallback }) {
         setClassDesc('');
         setClassTitle('');
     };
+    const joinClass = async (classID) => {
+        setJoinLoading(true);
+
+        try {
+            const classRef = doc(db, 'classes', classID);
+            const classGot = await getDoc(classRef);
+            const existingMembership = query(collection(db, 'classMembers'), where('uid', '==', currentUser.uid), where('classId', '==', classID));
+            const result = await getDocs(existingMembership);
+            console.log('check class exist',);
+
+            // return;
+            if (!classGot.exists()) {
+                setSnackbarMsg(`This class does not exist`);
+                setSnackbarOpen(true);
+                classListRef.current.getClasses();
+            }
+            else if (result.docs.length < 1) {
+                console.log('doc size', result.docs.length);
+                const joinRequest = await addDoc(collection(db, 'classMembers'), {
+                    classId: classID,
+                    classRole: 'student',
+                    uid: currentUser.uid,
+                    status: 'accepted'
+                });
+                console.log('joinRequest', joinRequest);
+
+                setSnackbarMsg(`You've joined a class`);
+                setSnackbarOpen(true);
+                setJoinClassDialogOpen(false);
+                classListRef.current.getClasses();
+            } else {
+                setSnackbarMsg('Could not find a class with this ID');
+                setSnackbarOpen(true);
+            }
+
+        } catch (error) {
+            console.log('Error trying to find existing class', error);
+            setSnackbarMsg('Could not find a class with this ID');
+            setSnackbarOpen(true);
+        }
+
+        setJoinLoading(false);
+
+    }
     return (
         <>
+
+
             <md-dialog id="create-class-dialog" >
                 <div slot="headline">
                     Create a new Class
@@ -173,13 +228,56 @@ function HomePage({ selectedClassCallback }) {
                         <span slot='icon' className="material-symbols-outlined">add</span>
                         Create Class
                     </md-filled-button>
-                    <md-outlined-button>
+                    <md-outlined-button onClick={() => { setJoinClassDialogOpen(!joinClassDialogOpen) }}>
                         <span slot='icon' className="material-symbols-outlined">group_add</span>
                         Join Class
                     </md-outlined-button>
                 </div>
             </div>
             <ClassList ref={classListRef} selectedClassCallback={selectedClassCallback} />
+            <Dialog
+                open={joinClassDialogOpen}
+                onClose={() => { }}
+                PaperProps={{
+                    component: 'form',
+                    onSubmit: (event) => {
+                        event.preventDefault();
+                        const formData = new FormData(event.currentTarget);
+                        const formJson = Object.fromEntries(formData.entries());
+                        const classId = formJson.classId;
+                        joinClass(classId);
+                        console.log(classId);
+                        // handleClose();
+                    },
+                }}
+            >
+                <DialogTitle>Join a class</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        To join a class, please enter the ID of the class here. Ask the teacher of the Class for a Class ID.
+                        Copy the Class ID and paste it here.
+                    </DialogContentText>
+                    <TextField
+                        autoFocus
+                        required
+                        margin="dense"
+                        id="name"
+                        name="classId"
+                        label="Enter Class ID"
+                        type="text"
+                        fullWidth
+                        variant="standard"
+                    />
+                    {joinLoading && <md-linear-progress indeterminate></md-linear-progress>}
+                </DialogContent>
+                <DialogActions>
+                    <md-text-button onClick={() => { setJoinClassDialogOpen(!joinClassDialogOpen) }} >Cancel</md-text-button>
+                    <md-text-button type="submit" >Join</md-text-button>
+                    {/* <Button type="submit">Join</Button> */}
+                </DialogActions>
+            </Dialog>
+
+
         </>
     );
 }

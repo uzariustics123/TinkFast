@@ -1,4 +1,4 @@
-import { useState, useEffect, Suspense, lazy } from 'react'
+import { useContext, useState, useEffect, Suspense, lazy } from 'react'
 import './App.css'
 import 'material-symbols';
 import 'animate.css';
@@ -11,9 +11,15 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import PreLoader from './screens/PreLoader.jsx'
 import Material3 from './screens/Material3.jsx';
 import { ReactNotifications } from 'react-notifications-component';
+import { AppContext } from './AppContext.jsx';
 
 function App() {
   const [loading, setLoading] = useState(true);
+  const [currentUserData, setCurrentUserData] = useState(null);
+  const [currentUserInfo, setCurrentUserInfo] = useState(null);
+  const [backdropOpen, setBackdropOpen] = useState(false);
+  const [openSnackbar, setSnackbarOpen] = useState(false);
+  const [snackbarMsg, setSnackbarMsg] = useState('');
   useEffect(() => {
     // Simulate a data loading delay
     setTimeout(() => {
@@ -22,19 +28,22 @@ function App() {
   }, []);
   return (
     <>
-      <ReactNotifications />
-      <Suspense fallback={<PreLoader />}>
-        <Router>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/*" element={<MainPage />} />
-            <Route path="/main" element={<MainPage />} />
-            <Route path="/material3" element={<Material3 />} />
-            <Route path="/preloader" element={<PreLoader />} />
-          </Routes>
-        </Router>
-      </Suspense>
+      <AppContext.Provider value={{ currentUserData, setCurrentUserData, backdropOpen, setBackdropOpen, openSnackbar, setSnackbarOpen, snackbarMsg, setSnackbarMsg }}>
+
+        <ReactNotifications />
+        <Suspense fallback={<PreLoader />}>
+          <Router>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/*" element={<MainPage />} />
+              <Route path="/main" element={<MainPage />} />
+              <Route path="/material3" element={<Material3 />} />
+              <Route path="/preloader" element={<PreLoader />} />
+            </Routes>
+          </Router>
+        </Suspense>
+      </AppContext.Provider>
     </>
   )
 }

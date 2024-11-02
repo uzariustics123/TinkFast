@@ -14,7 +14,8 @@ import ClassView from '../components/ClassView';
 import { OpenedClass } from '../AppContext';
 import { AppContext } from '../AppContext';
 import { collection, addDoc, query, where, getDoc, getDocs } from "firebase/firestore";
-import { Snackbar, CircularProgress, Backdrop } from '@mui/material';
+import { Snackbar, CircularProgress, Backdrop, ThemeProvider, createTheme, colors } from '@mui/material';
+import { blue, green, lightGreen, lime, yellow } from '@mui/material/colors';
 // import '../material-icons.css';
 
 function MainPage() {
@@ -90,29 +91,73 @@ function MainPage() {
         setSnackbarOpen(false);
 
     }
+    const customTheme = createTheme({
+        palette: {
+            primary: {
+                light: '#6fbf73',
+                main: '#4caf50',
+                dark: '#357a38',
+                contrastText: '#fff',
+            },
+            secondary: { main: colors.green[900] },
+        },
+        components: {
+            // Name of the component
+            MuiPaper: {
+                styleOverrides: {
+                    // Name of the slot
+                    root: {
+                        // Some CSS
+                        borderRadius: '25px',
+                    },
+                },
+            },
+            MuiStepIcon: {
+                styleOverrides: {
+                    // Name of the slot
+                    root: {
+                        // Some CSS
+                        color: blue,
+                    },
+                },
+            },
+            MuiButton: {
+                styleOverrides: {
+                    // Name of the slot
+                    root: {
+                        // Some CSS
+                        borderRadius: '25px',
+                    },
+                },
+            }
+        },
+    });
 
     return (
         <>
-            <Backdrop
-                sx={(theme) => ({ color: '#fff', zIndex: theme.zIndex.drawer + 1 })}
-                open={backdropOpen}
-                onClick={() => { }}>
-                <CircularProgress color="inherit" />
-            </Backdrop>
-            <OpenedClass.Provider value={{ openedClass, setOpenedClass }}>
-                <SideBar onMenuItemClick={handleCurrentDrawerMenuItem} activeItem={currentPage} />
-                <div className="main-container">
-                    {currentPage === 'home' && <HomePage selectedClassCallback={openClassCallback} />}
-                    {currentPage === 'class' && <ClassView />}
-                    {/* {currentPage === 'home' ? <HomePage /> : <React.Fragment />} */}
-                </div>
-            </OpenedClass.Provider>
-            <Snackbar
-                open={openSnackbar}
-                autoHideDuration={6000}
-                onClose={handleSnackbarClose}
-                message={snackbarMsg}
-            />
+            <ThemeProvider theme={customTheme}>
+
+                <Backdrop
+                    sx={(theme) => ({ color: '#fff', zIndex: theme.zIndex.drawer + 1 })}
+                    open={backdropOpen}
+                    onClick={() => { }}>
+                    <CircularProgress color="inherit" />
+                </Backdrop>
+                <OpenedClass.Provider value={{ openedClass, setOpenedClass }}>
+                    <SideBar onMenuItemClick={handleCurrentDrawerMenuItem} activeItem={currentPage} />
+                    <div className="main-container">
+                        {currentPage === 'home' && <HomePage selectedClassCallback={openClassCallback} />}
+                        {currentPage === 'class' && <ClassView />}
+                        {/* {currentPage === 'home' ? <HomePage /> : <React.Fragment />} */}
+                    </div>
+                </OpenedClass.Provider>
+                <Snackbar
+                    open={openSnackbar}
+                    autoHideDuration={6000}
+                    onClose={handleSnackbarClose}
+                    message={snackbarMsg}
+                />
+            </ThemeProvider>
         </>
 
 

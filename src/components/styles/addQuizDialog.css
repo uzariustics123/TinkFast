@@ -4,6 +4,13 @@
     flex-wrap: nowrap;
 }
 
+.row-center {
+    display: grid;
+    grid-template-columns: auto auto;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
 .quizTypesContainer {
     width: 200px;
     height: 100vh;

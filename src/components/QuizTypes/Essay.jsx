@@ -8,7 +8,7 @@ const Essay = (props) => {
     return (
         <>
             <div className="quiz-container">
-                <Typography sx={{ ml: 2, flex: 1, fontFamily: 'Open Sans' }} variant="body2">
+                <Typography sx={{ ml: 2, flex: 1, fontFamily: 'Open Sans' }} variant="body1">
                     {props.question}
                 </Typography>
                 <br />

@@ -7,13 +7,13 @@ import { Store } from 'react-notifications-component';
 import './styles/classView.css';
 import PeopleList from './PeopleList';
 import QuizesList from './QuizesList';
-import { AppContext, OpenedClass } from '../AppContext';
+import { AppContext, ClassContext } from '../AppContext';
 
 function ClassView(props) {
     const [userData, setUserData] = useState(null);
     const [selectedTab, setSelectedTab] = useState(0);
 
-    const { openedClass, setOpenedClass } = useContext(OpenedClass);
+    const { openedClass, setOpenedClass } = useContext(ClassContext);
     const { currentUserData, currentUserInfo, setCurrentUserInfo, setCurrentUserData } = useContext(AppContext);
 
     const handleTabChange = (index) => {

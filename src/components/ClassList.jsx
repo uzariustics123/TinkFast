@@ -10,7 +10,7 @@ import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import CircularProgress from '@mui/material/CircularProgress';
 import { Button, Snackbar, Dialog, DialogContent, DialogActions, DialogContentText, DialogTitle, TextField } from "@mui/material";
-import { AppContext, OpenedClass } from "../AppContext";
+import { AppContext, ClassContext } from "../AppContext";
 
 
 const ClassList = forwardRef((props, ref) => {
@@ -18,7 +18,7 @@ const ClassList = forwardRef((props, ref) => {
     const updateClassDescRef = useRef(null);
     const updateClassTitleRef = useRef(null);
     const editDialogElem = useRef(null);
-    const { openedClass, setOpenedClass } = useContext(OpenedClass);
+    const { openedClass, setOpenedClass } = useContext(ClassContext);
 
     const { backdropOpen, setBackdropOpen, openSnackbar, setSnackbarOpen, snackbarMsg, setSnackbarMsg } = useContext(AppContext);
     // const [openSnackbar, setSnackbarOpen] = useState(false);

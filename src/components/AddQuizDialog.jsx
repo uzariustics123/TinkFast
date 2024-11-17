@@ -10,11 +10,11 @@ import Toolbar from '@mui/material/Toolbar';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import Slide from '@mui/material/Slide';
-import { forwardRef, useContext, useEffect, useState } from 'react';
-import { DraftQuiz, QuizContext } from '../AppContext';
+import { forwardRef, useContext, useEffect, useReducer, useState } from 'react';
+import { AppContext, ClassContext, DraftQuiz, QuizContext, QuizResponseContext } from '../AppContext';
 import CloseIcon from '@mui/icons-material/Close';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { Container, Dialog, DialogActions, DialogContent, DialogTitle, DialogContentText, Tooltip, Chip, Stack, RadioGroup, FormLabel, FormControl, FormControlLabel, Radio, InputLabel, TextField, Stepper, Step, StepLabel, StepContent, Box, Paper } from '@mui/material';
+import { Container, Dialog, DialogActions, DialogContent, DialogTitle, DialogContentText, Tooltip, Chip, Stack, RadioGroup, FormLabel, FormControl, FormControlLabel, Radio, InputLabel, TextField, Stepper, Step, StepLabel, StepContent, Box, Paper, Input, Select, MenuItem } from '@mui/material';
 import { green, grey, lightGreen, lime } from '@mui/material/colors';
 import Essay from './QuizTypes/Essay';
 import { closestCorners, DndContext, useDraggable, useDroppable } from '@dnd-kit/core';
@@ -25,6 +25,10 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import 'dayjs/locale/en';
 import dayjs from 'dayjs';
 import MultiChoice from './QuizTypes/MultiChoice';
+import SingleChoice from './QuizTypes/SingleChoice';
+import MatchingType from './QuizTypes/MatchingType';
+import { addDoc, collection, doc, writeBatch } from 'firebase/firestore';
+import { db } from './Firebase';
 
 
 const Transition = forwardRef(function Transition(props, ref) {
@@ -35,13 +39,49 @@ function AddQuizDialog() {
     const [quizDraft, setQuizDraft] = useState([]);
     const [quizTitle, setQuizTitle] = useState('');
     const [quizDesc, setQuizDesc] = useState('');
+    const { currentUserData, backdropOpen, setBackdropOpen, openSnackbar, setSnackbarOpen, setSnackbarMsg } = useContext(AppContext);
+    const [quizData, dispatchQuizData] = useReducer((currentData, action) => {
+        console.log('data is ', action.data);
+        switch (action.type) {
+            case 'title': {
+                return { ...currentData, title: action.data };
+            }
+            case 'description': {
+                return { ...currentData, description: action.data };
+            }
+            case 'status': {
+                return { ...currentData, status: action.data };
+            }
+            case 'period': {
+                return { ...currentData, period: action.data };
+            }
+            case 'expectedStartDateTime': {
+                return { ...currentData, expectedStartDateTime: action.data };
+            }
+            case 'expectedEndDateTime': {
+                return { ...currentData, expectedEndDateTime: action.data };
+            }
+            default: {
+                return { ...currentData };
+            }
+        }
+    }, {
+        title: '',
+        description: '',
+        status: 'draft',
+        period: 'prelim',
+        expectedStartDateTime: dayjs().format('MM/DD/YYYY hh:mm A'),
+        expectedEndDateTime: '',
+    });
     const [toUpdateQuest, setToUpdateQuest] = useState({});
     const [selectQuestionTypeDialog, setSelectQuestionTypeDialog] = useState(false);
     const [editQuestionTypeDialog, setEditQuestionTypeDialog] = useState(false);
     const [setupQuestDialogOpen, openSetupQuestDialog] = useState(false);
     const [currentPostoAdd, setCurrentPostoAdd] = useState(0);
+    const [quizResponse, setQuizResponse] = useState([{}]);
 
     const { openDialog, setDialogOpen } = useContext(QuizContext);
+    const { openedClass } = useContext(ClassContext);
 
     const onQuizTypeDragged = (dragEvent, type) => {
         // dragEvent.dataTransfer.effectAllowed = 'copy';
@@ -71,25 +111,48 @@ function AddQuizDialog() {
             newQuiz = {
                 question: '',
                 type: type,
+                points: 1,
                 id: (crypto.randomUUID())
             };
         } else if (type == 'multiChoice') {
             newQuiz = {
-                question: 'Edit to add your question',
+                question: '',
                 type: type,
-                choices: ['Choice 1', 'Choice 2', 'Choice 3'],
+                choices: [
+                    // { value: 'Choice 1', isCorrect: false, },
+                    // { value: 'Choice 2', isCorrect: false, },
+                    // { value: 'Choice 3', isCorrect: false, },
+                ],
+                id: (crypto.randomUUID())
+            };
+        } else if (type == 'singleChoice') {
+            newQuiz = {
+                question: '',
+                type: type,
+                choices: [
+                    // { value: 'Choice 1', isCorrect: false, },
+                    // { value: 'Choice 2', isCorrect: false, },
+                    // { value: 'Choice 3', isCorrect: false, },
+                ],
+                points: 1,
+                correctChoice: 'Choice 2',
                 id: (crypto.randomUUID())
             };
         }
         else if (type == 'matchingType') {
             newQuiz = {
-                question: 'Edit to add your question',
+                question: '',
                 type: type,
-                choices: ['Choice 1', 'Choice 2', 'Choice 3'],
+                choices: [
+                    // { value: 'Choice 1', desc: 'description', points: 1, isCorrect: false },
+                    // { value: 'Choice 2', desc: 'description', points: 1, isCorrect: false },
+                    // { value: 'Choice 3', desc: 'description', points: 1, isCorrect: false },
+                ],
                 id: (crypto.randomUUID())
             };
         }
         newQuiz.status = 'initial';
+        newQuiz.points = 1;
         const newQuizList = [...quizDraft];
         newQuizList.splice(pos, 0, newQuiz);
         console.log('newQuizList', newQuizList);
@@ -97,17 +160,18 @@ function AddQuizDialog() {
         setupQuestItem(newQuiz);
     }
     const setupQuestItem = (item) => {
+        console.log('setup run');
+
         setToUpdateQuest(item);
         openSetupQuestDialog(true);
     }
     const SetupQuestItemDialog = (props) => {
-        console.log('q', quizDraft);
-
         const Qtype = toUpdateQuest.type;
         const [activeStep, setActiveStep] = useState(0);
         const [singleItems, setSingleChoiceItems] = useState([]);
         let steps = [{}];
-        let [questionContent, setQuestContent] = useState(toUpdateQuest.question);
+        let [questionContent, setQuestContent] = useState(toUpdateQuest.question ? toUpdateQuest.question : '');
+        const [newQuestData, setNewQuestData] = useState(toUpdateQuest ? { ...toUpdateQuest } : {});
         if (Qtype == 'essay')
             steps = [
                 {
@@ -115,31 +179,175 @@ function AddQuizDialog() {
                     description: `Setup question by following these steps`,
                 },
                 {
+                    label: 'Score Points',
+                    description:
+                        `Allocate score points for this question`,
+                },
+                {
                     label: 'Considerations',
                     description:
                         `An Essay type of question does not automatically rate your student's answer. You may need to review each of them and rate them manually to justify your student's answer.`,
                 },
             ];
+        else if (Qtype == 'multiChoice')
+            steps = [
+                {
+                    label: 'Enter Question',
+                    description: `Setup question by following these steps`,
+                },
+                {
+                    label: 'Define choices',
+                    description:
+                        `Add atleast 3 choices to proceed`,
+                },
+                {
+                    label: 'Define correct choices',
+                    description:
+                        `Select choices not exceeding or equal to the current items count`,
+                },
+                {
+                    label: 'Specify points',
+                    description:
+                        `Please set score points when a student correctly selected each correct items`,
+                },
+            ];
+        else if (Qtype == 'singleChoice')
+            steps = [
+                {
+                    label: 'Enter Question',
+                    description: `Setup question by following these steps`,
+                },
+                {
+                    label: 'Define choices',
+                    description:
+                        `Add atleast 2 choices to proceed`,
+                },
+                {
+                    label: 'Define the correct choice item',
+                    description:
+                        `Select 1 correct item for this question`,
+                },
+                {
+                    label: 'Specify points',
+                    description:
+                        `Please allocate score points when a student succesfully selected the correct item`,
+                },
+            ];
+        else if (Qtype == 'matchingType')
+            steps = [
+                {
+                    label: 'Set Instruction',
+                    description: `Setup instruction for your matching type question`,
+                },
+                {
+                    label: 'Items and Values',
+                    description:
+                        `Define items and their equivalent values`,
+                },
+                {
+                    label: 'Points allocation',
+                    description:
+                        `Please allocate score points when a student succesfully matched the correct items`,
+                },
+            ];
         const cancelSetup = () => {
+            console.log('new quest data', newQuestData);
+
             openSetupQuestDialog(false);
-            if (toUpdateQuest.status == 'initial') {
+            if (newQuestData.status == 'initial') {
                 const newQuizDraft = [...quizDraft];
                 newQuizDraft.splice(newQuizDraft.indexOf(toUpdateQuest), 1);
                 setQuizDraft(newQuizDraft);
             }
         }
         const saveSetup = () => {
-            const questToSave = { ...toUpdateQuest };
+            const questToSave = { ...newQuestData };
             if (Qtype == 'essay') {
             }
-            questToSave.question = questionContent;
-            questToSave.status = 'published';
+            questToSave.status = 'draft';
             setToUpdateQuest({ ...questToSave });
+            setNewQuestData(questToSave);
             const updatedQuestionList = [...quizDraft];
             updatedQuestionList[quizDraft.indexOf(toUpdateQuest)] = questToSave;
             setQuizDraft(updatedQuestionList);
             openSetupQuestDialog(false);
-            console.log('q is ', updatedQuestionList);
+            // console.log('qdata', questToSave);
+            // console.log('newQdata', newQuestData);
+        }
+        const removeChoiceItem = (item) => {
+            const choices = [...newQuestData.choices];
+            choices.splice(choices.indexOf(item), 1);
+            const toSaveQuestData = { ...newQuestData };
+            toSaveQuestData.choices = choices;
+            setNewQuestData(toSaveQuestData);
+            // console.log('new questdata', newQuestData);
+            // console.log('to save questdata', newQuestData);
+        }
+        const [choiceItemToAdd, setChoiceItemToAdd] = useState('');
+        const [choiceItemDescToAdd, setChoiceItemDescToAdd] = useState('');
+        const [disableAddItem, setDisableAddItem] = useState(true);
+        const choiceItemTxtField = (event) => {
+            const textis = event.target.value;
+            setChoiceItemToAdd(textis);
+            const choices = [...newQuestData.choices];
+            const disableChip = choices.find(item => item.value == textis) || (textis.trim() == '');
+            setDisableAddItem(disableChip);
+        }
+        const choiceItemDescField = (event) => {
+            const itemDesc = event.target.value;
+            setChoiceItemDescToAdd(itemDesc);
+            const choices = [...newQuestData.choices];
+        }
+        const addChoiceItem = () => {
+            const choices = [...newQuestData.choices];
+            if (choices.find(item => item.value == choiceItemToAdd))
+                return;
+            console.log('to add item', choiceItemToAdd);
+            let newItem = {
+                value: choiceItemToAdd,
+                isCorrect: false
+            };
+            if (Qtype == 'matchingType')
+                newItem = {
+                    ...newItem,
+                    desc: choiceItemDescToAdd
+                }
+            choices.push(newItem);
+            const toSaveQuestData = { ...newQuestData };
+            toSaveQuestData.choices = choices;
+            setNewQuestData(toSaveQuestData);
+            console.log('new questdata', newQuestData);
+            console.log('to save questdata', newQuestData);
+            setDisableAddItem(true);
+        }
+        const isLimitReached = function () {
+            const items = newQuestData.choices;
+            const correctItems = items.filter((choice) => choice.isCorrect);
+            if (Qtype == 'singleChoice')
+                return correctItems.length >= 1;
+            else if (Qtype == 'multiChoice')
+                return (correctItems.length + 1) >= items.length;
+        }
+        const [reachedChoiceLimit, setReachedChoiceLimit] = useState(false);
+        const setUnsetCorrectChoice = (item) => {
+            const items = newQuestData.choices;
+            const correctItems = items.filter((choice) => choice.isCorrect);
+            const reachedLimit = function () {
+                if (Qtype == 'singleChoice')
+                    return correctItems.length >= 1;
+                else if (Qtype == 'multiChoice')
+                    return (correctItems.length + 1) >= items.length;
+            }
+            setReachedChoiceLimit(reachedLimit());
+            // if (!reachedLimit()) {
+            const toSaveQuestData = { ...newQuestData };
+            item.isCorrect = !item.isCorrect;
+            items[items.indexOf(item)] = item;
+            toSaveQuestData.choices = items;
+            setNewQuestData(toSaveQuestData);
+            // } else {
+
+            // }
 
         }
 
@@ -156,28 +364,60 @@ function AddQuizDialog() {
                                     const nextBtnProps = {};
                                     labelProps.optional = index === steps.length - 1 ? <Typography variant="caption">Last step</Typography> : null;
                                     const questContentChange = (event) => {
-                                        let essay = event.target.value;
-                                        console.log(essay);
-                                        setQuestContent(essay);
+                                        let newQuestion = event.target.value;
+                                        // setQuestContent(newQuestion);
+                                        setNewQuestData({ ...newQuestData, question: newQuestion });
                                     }
-                                    if (index == 0 && Qtype == 'essay') {
-                                        if (questionContent.trim() == '') {
-                                            labelProps.optional = <Typography error={true} variant="caption">This is a required field</Typography>;
+                                    if (index == 0 && newQuestData.question != undefined && newQuestData.question.trim() == '') {
+                                        labelProps.optional = <Typography error={true} variant="caption">This is a required field</Typography>;
+                                        labelProps.error = true;
+                                        nextBtnProps.disabled = true;
+                                    }
+                                    if (Qtype == 'singleChoice') {
+                                        const correctItems = (newQuestData.choices != undefined ? newQuestData.choices : []).filter((choice) => (choice.isCorrect));
+                                        if (index == 1 && activeStep == 1 && newQuestData.choices.length < 2) {
+                                            labelProps.optional = <Typography error={true} variant="caption">Add atleast 2 choices </Typography>;
                                             labelProps.error = true;
                                             nextBtnProps.disabled = true;
-                                            console.log('wtf');
+                                        } else if (index == 2 && activeStep == 2 && correctItems.length == 0) {
+                                            labelProps.optional = <Typography error={true} variant="caption">Need atleast 1 correct item</Typography>;
+                                            // document.getElementById('step-next-btn').disabled = true;
+                                            labelProps.error = true;
+                                            nextBtnProps.disabled = true;
                                         }
                                     }
-                                    const handleNext = () => {
-                                        if (activeStep == 0 && Qtype == 'essay') {
-                                            // setToUpdateQuest({ ...toUpdateQuest, question: questionContent });
+                                    if (Qtype == 'multiChoice') {
+                                        if (index == 1 && activeStep == 1 && newQuestData.choices.length < 3) {
+                                            labelProps.optional = <Typography error={true} variant="caption">Add atleast 3 choices </Typography>;
+                                            labelProps.error = true;
+                                            nextBtnProps.disabled = true;
                                         }
+                                    }
+                                    if (Qtype == 'matchingType') {
+                                        if (index == 1 && activeStep == 1 && newQuestData.choices.length < 2) {
+                                            console.log('step 1 no choices');
+                                            labelProps.optional = <Typography error={true} variant="caption">Add atleast 2 choices </Typography>;
+                                            labelProps.error = true;
+                                            nextBtnProps.disabled = true;
+                                        }
+                                    }
+                                    // }
+                                    const handleNext = () => {
                                         setActiveStep((prevActiveStep) => prevActiveStep + 1);
                                     };
 
                                     const handleBack = () => {
                                         setActiveStep((prevActiveStep) => prevActiveStep - 1);
                                     };
+                                    const allocPointsEssaySelction = (event) => {
+                                        event.preventDefault();
+                                        let points = Number(event.target.value);
+                                        if (points < 1) {
+                                            event.target.value = 1;
+                                            points = 1;
+                                        }
+                                        setNewQuestData({ ...newQuestData, points: points });
+                                    }
                                     return (
                                         <Step key={step.label}>
                                             <StepLabel {...labelProps}>
@@ -191,14 +431,93 @@ function AddQuizDialog() {
                                                         onChange={questContentChange}
                                                         minRows={2}
                                                         maxRows={5}
-                                                        defaultValue={questionContent}
+                                                        defaultValue={newQuestData.question}
                                                         variant="filled" />
                                                 </>
                                                 }
+                                                {/* Choice */}
+                                                {((index == 1 && Qtype == 'essay') ||
+                                                    ((Qtype == 'singleChoice' || Qtype == 'multiChoice') && index == 3) ||
+                                                    (Qtype == 'matchingType' && index == 2)
+                                                ) && <>
+                                                        <TextField label="Score" sx={{ minWidth: '30rem' }} onChange={allocPointsEssaySelction} defaultValue={newQuestData.points} type='number' variant="filled" />
+                                                    </>
+                                                }
+                                                {(((Qtype == 'singleChoice' || Qtype == 'multiChoice') && index == 1)) && <>
+                                                    <Box sx={{ mt: 1, mb: 1, display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: '.5rem' }} spacing={1}>
+                                                        {newQuestData.choices.map((item, index) => (
+                                                            <Chip size='medium' key={item.value} label={item.value} variant='outlined' onDelete={() => removeChoiceItem(item)} />
+                                                        ))}
+                                                    </Box>
+                                                    <Stack direction='row' sx={{ minWidth: '30rem', mb: 2, mt: 1 }} spacing={2}>
+                                                        <TextField fullWidth id='choice-item-txtfield' label="New item" variant="filled"
+                                                            onChange={(e) => choiceItemTxtField(e)} />
+                                                        <Chip icon={<span className='material-symbols-outlined'>add</span>} disabled={disableAddItem} sx={{ alignSelf: 'center' }} label='Add' onClick={() => { addChoiceItem(); document.getElementById('choice-item-txtfield').value = ''; }} />
+                                                    </Stack>
+                                                </>
+                                                }
+
+
+                                                {(((Qtype == 'singleChoice' || Qtype == 'multiChoice') && index == 2)) &&
+                                                    <>
+                                                        <Box sx={{ mt: 1, mb: 1, display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: '.5rem' }} spacing={1}>
+                                                            {newQuestData.choices.map((item, index) => (
+                                                                <Chip
+                                                                    icon={item.isCorrect ? <span className='material-icons-outlined'>check</span> : <></>}
+                                                                    size='large'
+                                                                    key={item.value}
+                                                                    label={item.value}
+                                                                    disabled={(!(item.isCorrect) && isLimitReached())}
+                                                                    onClick={() => setUnsetCorrectChoice(item)}
+                                                                    variant='outlined' />
+                                                            ))}
+                                                        </Box>
+                                                    </>
+                                                }
+
+                                                {((Qtype == 'matchingType' && index == 1)) && <>
+                                                    <Box sx={{ mt: 1, mb: 1, display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: '.5rem' }} spacing={1}>
+                                                        {newQuestData.choices.map((item, index) => (
+                                                            <Stack direction='row' sx={{ minWidth: '30rem', mb: 2, mt: 1 }} spacing={2}>
+                                                                <Box>
+                                                                    <Typography sx={{ ml: 2, width: '100', flex: 1, fontFamily: 'Open Sans' }} variant="caption">
+                                                                        {item.value}
+                                                                    </Typography>
+                                                                    <br />
+                                                                    <Typography sx={{ ml: 2, width: '100', flex: 1, fontFamily: 'Open Sans' }} variant="caption">
+                                                                        {item.desc}
+                                                                    </Typography>
+                                                                </Box>
+                                                                <IconButton onClick={() => removeChoiceItem(item)} color={'#000'} sx={{ width: '40px', height: '40px', flexFlow: 'right' }} aria-label="close"> <span className="material-symbols-outlined">delete</span></IconButton>
+                                                                {/* <Chip size='medium' key={item.value} label={item.value} variant='outlined' onDelete={() => removeChoiceItem(item)} /> */}
+                                                            </Stack>
+                                                        ))}
+                                                    </Box>
+                                                    <Stack direction='row' sx={{ minWidth: '30rem', mb: 2, mt: 1 }} spacing={2}>
+                                                        <Box>
+                                                            <TextField fullWidth id='choice-item-txtfield' label="New item" variant="outlined"
+                                                                onChange={(e) => choiceItemTxtField(e)} />
+                                                            <TextField sx={{ mt: 1 }} fullWidth id='choice-desc-txtfield' label="Item description" variant="outlined"
+                                                                onChange={(e) => choiceItemDescField(e)} />
+                                                        </Box>
+                                                        <Chip icon={<span className='material-symbols-outlined'>add</span>} disabled={disableAddItem} sx={{ alignSelf: 'center' }} label='Add' onClick={(e) => {
+                                                            addChoiceItem();
+                                                            document.getElementById('choice-item-txtfield').value = '';
+                                                            document.getElementById('choice-desc-txtfield').value = '';
+                                                        }} />
+                                                    </Stack>
+                                                </>
+                                                }
+
+
                                                 <Box sx={{ mb: 2 }}>
-                                                    <Button variant="contained" {...nextBtnProps} onClick={handleNext} sx={{ mt: 1, mr: 1 }} >
-                                                        {(index === 1 && Qtype == 'essay') ? 'I understand'
-                                                            : index === steps.length - 1 ? 'Finish' : 'Next'}
+                                                    <Button id='step-next-btn' variant="contained" {...nextBtnProps} onClick={handleNext} sx={{ mt: 1, mr: 1 }} >
+                                                        {
+                                                            (index === 2 && Qtype == 'essay') ?
+                                                                'I understand' :
+                                                                index === steps.length - 1 ? 'Finish' :
+                                                                    'Next'
+                                                        }
                                                     </Button>
                                                     <Button disabled={index === 0} onClick={handleBack} sx={{ mt: 1, mr: 1 }} >
                                                         Back
@@ -233,18 +552,6 @@ function AddQuizDialog() {
     const quizTypeSelectDialog = (pos) => {
         setCurrentPostoAdd(pos);
         setSelectQuestionTypeDialog(!selectQuestionTypeDialog);
-    }
-    const DroppableChipArea = (props) => {
-        return (
-            <div className="quizTypeContainer">
-                <Divider sx={{ marginBottom: '1rem' }}>
-                    <Chip label="Add Question" onClick={() => { quizTypeSelectDialog(0) }} size="small" variant='outlined' />
-                </Divider>
-                {quizDraft.map((item, index) => (
-                    <DraggableQuizTypeContainer key={item.id} item={item} id={item.id} />
-                ))}
-            </div>
-        )
     }
     const QuestionTypeDialog = (props) => {
         const pos = props.pos
@@ -296,6 +603,8 @@ function AddQuizDialog() {
         //     transform: CSS.Transform.toString(transform)
         // }
         const editQuestion = (item) => {
+            console.log('edit launch');
+
             setToUpdateQuest(item);
             openSetupQuestDialog(true);
         }
@@ -313,6 +622,8 @@ function AddQuizDialog() {
                     </div>
                     {item.type == 'essay' && <Essay question={item ? item.question : ''} />}
                     {item.type == 'multiChoice' && <MultiChoice questionData={item} choices={item.choices} />}
+                    {item.type == 'singleChoice' && <SingleChoice questionData={item} choices={item.choices} />}
+                    {item.type == 'matchingType' && <MatchingType questionData={item} choices={item.choices} />}
                 </div>
                 <Divider sx={{ marginBottom: '1rem' }}>
                     <Chip label="Add Question" onClick={() => { quizTypeSelectDialog(quizDraft.indexOf(item) + 1) }} size="small" variant='outlined' />
@@ -354,6 +665,76 @@ function AddQuizDialog() {
 
 
     // =======================main============================
+    const quizTitltFieldChange = (e) => {
+        let quitztits = e.target.value;
+        dispatchQuizData({ type: 'title', data: quitztits });
+    }
+    const quizDescFieldChange = (e) => {
+        let quitzDesc = e.target.value;
+        dispatchQuizData({ type: 'description', data: quitzDesc });
+    }
+    const quizStatusFieldChange = (e) => {
+        let quitzStatus = e.target.value;
+        dispatchQuizData({ type: 'status', data: quitzStatus });
+    }
+    const quizPeriodFieldChange = (e) => {
+        let value = e.target.value;
+        dispatchQuizData({ type: 'period', data: value });
+    }
+    const quizStartDateFieldChange = (datetime) => {
+        let dateTimeValue = dayjs(datetime).format('MM/DD/YYYY hh:mm A');
+        dispatchQuizData({ type: 'expectedStartDateTime', data: dateTimeValue });
+        console.log('quiz data is', quizData);
+    }
+    const quizEndDateFieldChange = (datetime) => {
+        if (datetime) {
+            let dateTimeValue = dayjs(datetime).format('MM/DD/YYYY hh:mm A');
+            dispatchQuizData({ type: 'expectedEndDateTime', data: dateTimeValue });
+            console.log('quiz data is', quizData);
+        }
+    }
+    const saveQuizData = async () => {
+
+        if (quizDraft.length < 1) {
+            setSnackbarMsg('Add atleast 1 question');
+            setSnackbarOpen(true);
+            return;
+        }
+        setBackdropOpen(true);
+        console.log('opened class', openedClass);
+        const classRef = doc(db, 'classes', openedClass.classId);
+        const quizesRef = collection(classRef, 'quizes');
+        try {
+            const quizSaveResult = await addDoc(quizesRef, quizData);
+            try {
+
+                const batch = writeBatch(db);
+                const quizRef = doc(collection(quizesRef, quizSaveResult.id, 'questions'));
+                quizDraft.map((item, index) => {
+                    batch.set(quizRef, item);
+                });
+
+                batch.commit().then(function () {
+                    // ...
+                    setSnackbarMsg('Quiz saved');
+                    setSnackbarOpen(true);
+                    setDialogOpen(!openDialog);
+
+                });
+            } catch (error) {
+                setSnackbarMsg(error.message);
+                setSnackbarOpen(true);
+                console.log(error);
+
+            }
+
+        } catch (error) {
+            console.log(error);
+        }
+        setBackdropOpen(false);
+
+    }
+
     return (
         <>
             <QuestionEditorDialog />
@@ -373,37 +754,84 @@ function AddQuizDialog() {
                                 color={'#000'}
                                 onClick={() => { setDialogOpen(!openDialog) }}
                                 aria-label="close">
-                                <CloseIcon />
+                                <md-icon>arrow_back</md-icon>
                             </IconButton>
                             <Typography sx={{ color: '#000', ml: 2, flex: 1, fontFamily: 'Open Sans' }} variant="h6" component="div">
                                 Create Quiz
                             </Typography>
                             <Tooltip title='Save'>
-                                <md-outlined-icon-button onClick={() => { setDialogOpen(!openDialog) }}>
+                                <IconButton
+                                    disabled={quizData.title.trim() == '' || quizDraft.length <= 0}
+                                    edge="end"
+                                    color={'#000'}
+                                    onClick={saveQuizData}
+                                    aria-label="save">
                                     <md-icon>save</md-icon>
-                                </md-outlined-icon-button>
+                                </IconButton>
                             </Tooltip>
                         </Toolbar>
                     </AppBar>
+
                     <div className="row">
                         <Container className='quizContainer'>
-                            <md-outlined-text-field class='quiz-title' label="Quiz Title">
-                            </md-outlined-text-field>
-                            <md-outlined-text-field class='quiz-desc' label="Quiz Description">
-                            </md-outlined-text-field>
+                            <FormControl sx={{ width: '100%', mt: 1 }}>
+                                <TextField fullWidth onChange={quizTitltFieldChange} class='quiz-title' label="Quiz Title" />
+                            </FormControl>
+                            <FormControl fullWidth sx={{ width: '100%', mt: 1 }}>
+                                <TextField fullWidth onChange={quizDescFieldChange} class='quiz-desc' label="Quiz Description" />
+                            </FormControl>
+                            <Box sx={{ mb: 2 }}>
 
+                            </Box>
                             <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale='en'>
                                 <div className="row-center">
                                     {/* <InputLabel>Expected End Date and Time</InputLabel> */}
-                                    <MobileDateTimePicker defaultValue={dayjs()} label="Expected start date and time" />
+                                    <FormControl>
+                                        <InputLabel id="demo-simple-select-label">Quiz status</InputLabel>
+                                        <Select
+                                            labelId="demo-simple-select-label"
+                                            id="demo-simple-select"
+                                            value={quizData.status}
+                                            label="Quiz status"
+                                            onChange={quizStatusFieldChange} >
+                                            <MenuItem value={'draft'}>Draft (Visible only to you)</MenuItem>
+                                            <MenuItem value={'publish'}>Publish (Visible to everyone on this class)</MenuItem>
+                                        </Select>
+                                    </FormControl>
+                                    <FormControl>
+                                        <InputLabel id="demo-simple-select-label">Period</InputLabel>
+                                        <Select
+                                            labelId="demo-simple-select-label"
+                                            id="demo-simple-select"
+                                            value={quizData.period}
+                                            label="Period"
+                                            onChange={quizPeriodFieldChange} >
+                                            <MenuItem value={'prelim'}>Prelim</MenuItem>
+                                            <MenuItem value={'midterm'}>Midterm</MenuItem>
+                                            <MenuItem value={'finals'}>Finals</MenuItem>
+                                        </Select>
+                                    </FormControl>
+                                    <MobileDateTimePicker onAccept={quizStartDateFieldChange} defaultValue={dayjs()} label="Expected start date and time" />
                                     {/* <InputLabel>Count</InputLabel> */}
-                                    <MobileDateTimePicker label="Expected end date and time" />
+                                    <MobileDateTimePicker onAccept={quizEndDateFieldChange} label="Expected end date and time" />
+
                                 </div>
 
                             </LocalizationProvider>
-                            <DroppableChipArea />
+                            <div className="quizTypeContainer">
+                                <QuizResponseContext.Provider value={{ quizResponse, setQuizResponse }}>
+
+                                    <Divider sx={{ marginBottom: '1rem' }}>
+                                        <Chip label="Add Question" onClick={() => { quizTypeSelectDialog(0) }} size="small" variant='outlined' />
+                                    </Divider>
+                                    {quizDraft.map((item, index) => (
+                                        <DraggableQuizTypeContainer key={item.id} item={item} id={item.id} />
+                                    ))}
+                                </QuizResponseContext.Provider>
+                            </div>
 
                         </Container>
+
                     </div>
                 </Dialog>
             </DraftQuiz.Provider >

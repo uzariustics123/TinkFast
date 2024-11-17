@@ -1,10 +1,11 @@
 import { Typography, TextField, TextareaAutosize } from '@mui/material';
 import './styles/essay.css';
-import { useState } from "react";
+import { useState, useContext } from "react";
+import { QuizResponseContext } from '../../AppContext';
 
 const Essay = (props) => {
     const [composeMode, setComposeMode] = useState(false);
-
+    const { quizResponse, setQuizResponse } = useContext(QuizResponseContext);
     return (
         <>
             <div className="quiz-container">

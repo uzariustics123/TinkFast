@@ -2,17 +2,24 @@ import { Player, Controls } from '@lottiefiles/react-lottie-player';
 import '@material/web/all';
 import '@material/web/typography/md-typescale-styles.css';
 import './styles/peopleList.css'
-import { useImperativeHandle, useState, forwardRef, useLayoutEffect, useEffect, useRef } from 'react';
+import { useImperativeHandle, useState, forwardRef, useLayoutEffect, useEffect, useRef, useContext, useReducer } from 'react';
 import { auth, db } from '../components/Firebase';
 import { collection, addDoc, query, getDoc, getDocs, where } from "firebase/firestore"
 import './styles/selectPeopleDialog.css';
 import PeopleChip from './PeopleChip';
+import { AppContext } from '../AppContext';
 
 const PeopleSelection = forwardRef((props, ref) => {
     // let userData, classData, selectionTitle, cancelLabel, saveLabel, onSelectEvent, onSaveSelectionEvent;
+    const { currentUserData } = useContext(AppContext);
     const [selectedPeople, setselectedPeople] = useState([]);
     const [participantsList, setParticipantsList] = useState([]);
-    const [foundPeople, setFoundPeople] = useState([]);
+    const [foundPeople, setFoundPeople] = useReducer((currentlist, newlist) => {
+        const filteredList = newlist.filter(item => item.uid != currentUserData.uid);
+        console.log('filtered lsit', filteredList);
+        return filteredList;
+
+    }, []);
     const [selectionTitle, setSelectionTitle] = useState('Select people');
     const [disableChip, setDisableChip] = useState(false);
     const [isLoading, setLoading] = useState(false);

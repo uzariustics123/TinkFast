@@ -7,7 +7,7 @@ import { collection, addDoc, query, where, getDoc, getDocs, doc } from "firebase
 import { Store } from 'react-notifications-component';
 import ClassList from '../components/ClassList';
 import { Button, Snackbar, Dialog, DialogContent, DialogActions, DialogContentText, DialogTitle, TextField } from "@mui/material";
-import { AppContext, OpenedClass } from '../AppContext';
+import { AppContext, ClassContext } from '../AppContext';
 
 function HomePage({ selectedClassCallback }) {
     const currentUser = auth.currentUser;
@@ -15,7 +15,7 @@ function HomePage({ selectedClassCallback }) {
     const classTitleRef = useRef(null); // Reference to the web component
     const classDescRef = useRef(null);
     const [joinLoading, setJoinLoading] = useState(false);
-    const { openedClass, setOpenedClass } = useContext(OpenedClass);
+    const { openedClass, setOpenedClass } = useContext(ClassContext);
     const { currentUserData, setCurrentUserData, backdropOpen, setBackdropOpen, openSnackbar, setSnackbarOpen, snackbarMsg, setSnackbarMsg } = useContext(AppContext);
 
     const [joinClassDialogOpen, setJoinClassDialogOpen] = useState(false);
@@ -25,7 +25,7 @@ function HomePage({ selectedClassCallback }) {
     const classMemberDBRef = collection(db, "classMembers");
 
     useEffect(() => {
-        console.log('currentUserData', currentUserData);
+        // console.log('currentUserData', currentUserData);
 
         const classTitleTF = classTitleRef.current;
         const classDescTF = classTitleRef.current;
@@ -113,7 +113,7 @@ function HomePage({ selectedClassCallback }) {
             }
 
         } catch (e) {
-            console.error("Error adding user: ", e);
+            // console.error("Error adding user: ", e);
             Store.addNotification({
                 title: "Error: " + e.code,
                 message: e.message,
@@ -146,7 +146,7 @@ function HomePage({ selectedClassCallback }) {
             const classGot = await getDoc(classRef);
             const existingMembership = query(collection(db, 'classMembers'), where('uid', '==', currentUser.uid), where('classId', '==', classID));
             const result = await getDocs(existingMembership);
-            console.log('check class exist',);
+            // console.log('check class exist',);
 
             // return;
             if (!classGot.exists()) {
@@ -155,14 +155,14 @@ function HomePage({ selectedClassCallback }) {
                 classListRef.current.getClasses();
             }
             else if (result.docs.length < 1) {
-                console.log('doc size', result.docs.length);
+                // console.log('doc size', result.docs.length);
                 const joinRequest = await addDoc(collection(db, 'classMembers'), {
                     classId: classID,
                     classRole: 'student',
                     uid: currentUser.uid,
                     status: 'accepted'
                 });
-                console.log('joinRequest', joinRequest);
+                // console.log('joinRequest', joinRequest);
 
                 setSnackbarMsg(`You've joined a class`);
                 setSnackbarOpen(true);
@@ -174,7 +174,7 @@ function HomePage({ selectedClassCallback }) {
             }
 
         } catch (error) {
-            console.log('Error trying to find existing class', error);
+            // console.log('Error trying to find existing class', error);
             setSnackbarMsg('Could not find a class with this ID');
             setSnackbarOpen(true);
         }
@@ -246,7 +246,7 @@ function HomePage({ selectedClassCallback }) {
                         const formJson = Object.fromEntries(formData.entries());
                         const classId = formJson.classId;
                         joinClass(classId);
-                        console.log(classId);
+                        // console.log(classId);
                         // handleClose();
                     },
                 }}

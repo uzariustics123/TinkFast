@@ -78,14 +78,16 @@ function AddQuizDialog() {
     const [editQuestionTypeDialog, setEditQuestionTypeDialog] = useState(false);
     const [setupQuestDialogOpen, openSetupQuestDialog] = useState(false);
     const [currentPostoAdd, setCurrentPostoAdd] = useState(0);
-    const [quizResponse, setQuizResponse] = useState([{}]);
+    const [quizResponse, dispatchResponse] = useReducer((currentResponse, action) => {
+
+    }, [{}]);
 
     const { openDialog, setDialogOpen } = useContext(QuizContext);
     const { openedClass } = useContext(ClassContext);
 
     const onQuizTypeDragged = (dragEvent, type) => {
         // dragEvent.dataTransfer.effectAllowed = 'copy';
-        dragEvent.dataTransfer.setData("text/plain", type);
+        // dragEvent.dataTransfer.setData("text/plain", type);
         dragEvent.dataTransfer.setData("quizType", type);
         console.log("dragged", dragEvent.dataTransfer);
 
@@ -620,7 +622,7 @@ function AddQuizDialog() {
                             <span className="material-symbols-rounded">remove</span>
                         </IconButton>
                     </div>
-                    {item.type == 'essay' && <Essay question={item ? item.question : ''} />}
+                    {item.type == 'essay' && <Essay questionData={item} />}
                     {item.type == 'multiChoice' && <MultiChoice questionData={item} choices={item.choices} />}
                     {item.type == 'singleChoice' && <SingleChoice questionData={item} choices={item.choices} />}
                     {item.type == 'matchingType' && <MatchingType questionData={item} choices={item.choices} />}
@@ -709,8 +711,9 @@ function AddQuizDialog() {
             try {
 
                 const batch = writeBatch(db);
-                const quizRef = doc(collection(quizesRef, quizSaveResult.id, 'questions'));
                 quizDraft.map((item, index) => {
+                    const quizRef = doc(collection(quizesRef, quizSaveResult.id, 'questions'));
+                    console.log('adding item', item);
                     batch.set(quizRef, item);
                 });
 
@@ -819,7 +822,7 @@ function AddQuizDialog() {
 
                             </LocalizationProvider>
                             <div className="quizTypeContainer">
-                                <QuizResponseContext.Provider value={{ quizResponse, setQuizResponse }}>
+                                <QuizResponseContext.Provider value={{ quizResponse, dispatchResponse }}>
 
                                     <Divider sx={{ marginBottom: '1rem' }}>
                                         <Chip label="Add Question" onClick={() => { quizTypeSelectDialog(0) }} size="small" variant='outlined' />

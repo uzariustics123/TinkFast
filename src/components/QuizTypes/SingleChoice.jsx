@@ -4,7 +4,7 @@ import { QuizResponseContext } from '../../AppContext';
 const SingleChoice = (props) => {
     const [questData, setQuestData] = useState({ ...props.questionData });
     const [choiceItems, setChoiceItems] = useState([...props.choices]);
-    const { quizResponse, setQuizResponse } = useContext(QuizResponseContext);
+    const { quizResponse, dispatchResponse } = useContext(QuizResponseContext);
     return (
         <div className="quiz-container">
             <Typography sx={{ ml: 2, flex: 1, fontFamily: 'Open Sans' }} variant="body1">

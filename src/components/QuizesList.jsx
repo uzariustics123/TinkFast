@@ -4,22 +4,39 @@ import '@material/web/typography/md-typescale-styles.css';
 import './styles/quizesList.css';
 import { useImperativeHandle, useState, forwardRef, useLayoutEffect, useEffect, useRef, useContext, useReducer } from 'react';
 import { auth, db } from '../components/Firebase';
-import { collection, addDoc, query, getDoc, getDocs, where, doc } from "firebase/firestore"
-import { QuizContext, ClassContext } from '../AppContext';
+import { collection, addDoc, query, getDoc, getDocs, where, doc, updateDoc } from "firebase/firestore"
+import { QuizContext, ClassContext, AppContext, QuizResponseContext } from '../AppContext';
 import AddQuizDialog from './AddQuizDialog';
 import { Avatar, Box, Chip, Divider, FormControl, IconButton, InputLabel, List, ListItem, ListItemAvatar, ListItemIcon, ListItemText, MenuItem, Select, Stack, Typography } from '@mui/material';
 import dayjs from 'dayjs';
+import { QuizView } from './QuizView';
 
 function QuizesList() {
     const { openedClass } = useContext(ClassContext);
+    const { setSnackbarOpen, setSnackbarMsg } = useContext(AppContext);
     const [openDialog, setDialogOpen] = useState(false);
+    const [quizOpenDialog, setQuizOpenDialog] = useState(false);
+    const [quizOpenData, setQuizOpenData] = useState({});
     const [quizes, dispathQuizes] = useReducer((currentQuizes, action) => {
         if (action.type == 'setQuizes') {
             if (openedClass.classRole == 'teacher')
                 return action.data;
             else
                 return action.data.filter(item => item.status == 'publish')
-        } else
+        }
+        else if (action.type == 'updateQuizStatus') {
+            const foundItem = currentQuizes.find(item => item.id == action.item.id);
+            if (foundItem) {
+                foundItem.status = action.value;
+                const newQuizes = [...currentQuizes];
+                newQuizes[currentQuizes.indexOf(action.item)] = foundItem;
+                return newQuizes;
+            } else {
+                console.log('Quiz not found');
+            }
+
+        }
+        else
             return [];
     }, []);
     useEffect(() => {
@@ -81,9 +98,41 @@ function QuizesList() {
         else if (index == 2)
             getFinalsQuizes();
     }
+    const onQuizStatusChange = async (e, item) => {
+        const classRef = doc(db, 'classes', openedClass.classId);
+        const quizesRef = collection(classRef, 'quizes');
+        const quizDoc = doc(quizesRef, item.id);
+        console.log('status', e.target.value);
+        dispathQuizes({
+            type: 'updateQuizStatus',
+            item: item,
+            value: e.target.value
+        });
+        try {
+            await updateDoc(quizDoc, {
+                status: e.target.value
+            });
+            setSnackbarOpen(true);
+            setSnackbarMsg('Class updated');
+        } catch (error) {
+            setSnackbarOpen(true);
+            setSnackbarMsg(error.message);
+            console.log(error);
+
+        }
+    }
+    const startQuiz = (quizItem) => {
+        console.log('open', quizOpenDialog);
+        setQuizOpenDialog(true);
+        setQuizOpenData(quizItem);
+    }
+    const editQuiz = (quizItem) => {
+        console.log('to edit quiz', quizItem);
+
+    }
     return (
         <>
-            <QuizContext.Provider value={{ openDialog, setDialogOpen }}>
+            <QuizContext.Provider value={{ openDialog, setDialogOpen, quizOpenDialog, setQuizOpenDialog, quizOpenData, setQuizOpenData }}>
 
                 <div className="quiz-tab-container" style={{ position: 'sticky' }}>
 
@@ -115,20 +164,21 @@ function QuizesList() {
                                                 labelId="demo-simple-select-label"
                                                 id="demo-simple-select"
                                                 value={item.status}
+                                                onChange={(e) => { onQuizStatusChange(e, item); console.log("stats", e) }}
                                                 label="Status"
                                             >
                                                 <MenuItem value={'draft'}>Draft</MenuItem>
                                                 <MenuItem value={'publish'}>Publish</MenuItem>
                                             </Select>
                                         </FormControl>
-                                        <IconButton size='small' sx={{ minWidth: '50px' }} edge="end" aria-label="save">
-                                            <span style={{ fontSize: '24px' }} className='material-symbols-rounded'>check</span>
+                                        <IconButton onClick={() => editQuiz(item)} size='small' sx={{ minWidth: '50px' }} edge="end" aria-label="save">
+                                            <span style={{ fontSize: '24px' }} className='material-symbols-rounded'>edit</span>
                                         </IconButton>
                                         {/* <Chip label='Save' onClick={() => { }} variant='outlined' /> */}
                                     </Stack>
                                     :
                                     openedClass.classRole == 'student' ?
-                                        <Chip label='Start Quiz' onClick={() => { }} variant='outlined' /> : <></>
+                                        <Chip label='Start Quiz' onClick={(e) => startQuiz(item)} variant='outlined' /> : <></>
                                 }>
                                 {item.status == 'draft' ?
                                     <ListItemAvatar>
@@ -174,6 +224,7 @@ function QuizesList() {
                         </md-fab>
                         <AddQuizDialog></AddQuizDialog>
                     </>}
+                {openedClass.classRole == 'student' && <QuizView ></QuizView>}
             </QuizContext.Provider >
         </>
     );

@@ -81,9 +81,9 @@ const ClassList = forwardRef((props, ref) => {
         setDialogLoaderVal('block');
         updateClassDescTF.disabled = true;
         updateClassTitleTF.disabled = true;
-        console.log('No changes were made');
+        // console.log('No changes were made');
         if (updatableClassDoc.className == updateClassTitleTF.value && updatableClassDoc.classDesc == updateClassDescTF.value) {
-            console.log('no changes made');
+            // console.log('no changes made');
             return;
         } else {
             const docRef = doc(db, "classes", updatableClassDoc.id);
@@ -125,7 +125,7 @@ const ClassList = forwardRef((props, ref) => {
             setBackdropOpen(false);
             setSnackbarMsg('Class invitation accepted');
             setSnackbarOpen(true);
-            console.log('accepted');
+            // console.log('accepted');
             getClasses();
         } catch (error) {
             console.error("Error accepting class: ", error);
@@ -157,14 +157,14 @@ const ClassList = forwardRef((props, ref) => {
                 classRoles.set(doc.data().classId, doc.data().classRole);
                 classMembershipData.push({ membershipDoc: doc.id, ...doc.data() });
             });
-            console.log('class ids ', classIDs);
+            // console.log('class ids ', classIDs);
             let startingItem = 0;
             let itemsData = [];
             const getAdditionalClasses = async () => {
                 try {
                     const newBatchClass = [];
                     const classesToGet = classIDs.slice(startingItem, 30);
-                    console.log('classes to get', classesToGet);
+                    // console.log('classes to get', classesToGet);
                     const classQuery = query(collection(db, 'classes'), where('__name__', 'in', classesToGet));
                     const querySnapshot = await getDocs(classQuery);
 
@@ -178,7 +178,7 @@ const ClassList = forwardRef((props, ref) => {
                         getAdditionalClasses();
                     }
                     itemsData = [...itemsData, ...newBatchClass];
-                    console.log('classes we got', itemsData);
+                    // console.log('classes we got', itemsData);
 
 
                 } catch (error) {
@@ -200,7 +200,7 @@ const ClassList = forwardRef((props, ref) => {
         try {
             const docRef = doc(db, "classes", deletableClassDoc.id);
             await deleteDoc(docRef);
-            console.log("Class successfully deleted!");
+            // console.log("Class successfully deleted!");
             Store.addNotification({
                 title: "Class deleted!",
                 message: "Successfully deleted a class",
@@ -239,16 +239,16 @@ const ClassList = forwardRef((props, ref) => {
             case "view":
                 props.selectedClassCallback(item);
                 setOpenedClass(item);
-                console.log("Viewing class:", item.className);
+                // console.log("Viewing class:", item.className);
                 // Add logic to view the class
                 break;
             case "edit":
-                console.log("Editing class:", item.className);
+                // console.log("Editing class:", item.className);
                 editClassPrompt(item);
                 // Add logic to edit the class
                 break;
             case "delete":
-                console.log("Deleting class:", item.className);
+                // console.log("Deleting class:", item.className);
                 setDeletableClassDoc(item);
                 confirmDeleteClass(item);
                 // Add logic to delete the class

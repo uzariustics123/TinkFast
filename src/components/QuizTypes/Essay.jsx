@@ -4,13 +4,14 @@ import { useState, useContext } from "react";
 import { QuizResponseContext } from '../../AppContext';
 
 const Essay = (props) => {
+    const [questData, setQuestData] = useState({ ...props.questionData });
     const [composeMode, setComposeMode] = useState(false);
-    const { quizResponse, setQuizResponse } = useContext(QuizResponseContext);
+    const { quizResponse, dispatchResponse } = useContext(QuizResponseContext);
     return (
         <>
             <div className="quiz-container">
                 <Typography sx={{ ml: 2, flex: 1, fontFamily: 'Open Sans' }} variant="body1">
-                    {props.question}
+                    {questData.question}
                 </Typography>
                 <br />
                 {/* <md-filled-text-field class='quiz-desc' label="Answer" type='textarea'>

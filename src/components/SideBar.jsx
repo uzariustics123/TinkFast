@@ -55,7 +55,7 @@ function Sidebar({ onMenuItemClick, activeItem }) {
 
             querySnapshot.forEach((doc) => {
                 setUserData(doc.data());
-                console.log('user data is', doc.data());
+                // console.log('user data is', doc.data());
             });
 
         } catch (error) {

@@ -23,7 +23,6 @@ const ClassRemarks = () => {
             const filteredQuery = query(collection(db, 'classMembers'), where('classId', '==', openedClass.id),
                 where('classRole', '!=', 'teacher'),
                 where('status', '==', 'accepted'));
-            console.log('log');
 
             const querySnapshot = await getDocs(filteredQuery);
             querySnapshot.forEach((doc) => {
@@ -34,7 +33,6 @@ const ClassRemarks = () => {
                 }
                 console.log('class role: ' + doc.data().classRole);
             });
-            console.log('query snap', querySnapshot);
             let startingItem = 0;
             const getUserData = async () => {
                 try {

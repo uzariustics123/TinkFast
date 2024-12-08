@@ -9,6 +9,10 @@
     overflow: hidden;
 }
 
+.rg-celleditor.rg-text-celleditor input {
+    color: grey
+}
+
 .class-tabs {
     /* --md-primary-tab-container-shape: 25px; */
     --md-primary-tab-container-color: #fff;

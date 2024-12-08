@@ -61,6 +61,9 @@ function AddQuizDialog() {
             case 'expectedEndDateTime': {
                 return { ...currentData, expectedEndDateTime: action.data };
             }
+            case 'category': {
+                return { ...currentData, category: action.data };
+            }
             default: {
                 return { ...currentData };
             }
@@ -70,6 +73,7 @@ function AddQuizDialog() {
         description: '',
         status: 'draft',
         period: 'prelim',
+        category: 'quizzes',
         expectedStartDateTime: dayjs().format('MM/DD/YYYY hh:mm A'),
         expectedEndDateTime: '',
     });
@@ -85,16 +89,6 @@ function AddQuizDialog() {
     const { openDialog, setDialogOpen } = useContext(QuizContext);
     const { openedClass } = useContext(ClassContext);
 
-    const onQuizTypeDragged = (dragEvent, type) => {
-        // dragEvent.dataTransfer.effectAllowed = 'copy';
-        // dragEvent.dataTransfer.setData("text/plain", type);
-        dragEvent.dataTransfer.setData("quizType", type);
-        console.log("dragged", dragEvent.dataTransfer);
-
-    }
-    const onQuizTypeDragOver = (dragEvent) => {
-        dragEvent.preventDefault();
-    }
     const removeQTitem = (item) => {
         console.log('removing item ', item);
         if (confirm('Are you sure to remove this question?')) {
@@ -309,11 +303,13 @@ function AddQuizDialog() {
                 value: choiceItemToAdd,
                 isCorrect: false
             };
-            if (Qtype == 'matchingType')
+            if (Qtype == 'matchingType') {
                 newItem = {
                     ...newItem,
                     desc: choiceItemDescToAdd
                 }
+                delete newItem.isCorrect;
+            }
             choices.push(newItem);
             const toSaveQuestData = { ...newQuestData };
             toSaveQuestData.choices = choices;
@@ -671,6 +667,10 @@ function AddQuizDialog() {
         let quitztits = e.target.value;
         dispatchQuizData({ type: 'title', data: quitztits });
     }
+    const quizCategoryFieldChange = (e) => {
+        let quitztits = e.target.value;
+        dispatchQuizData({ type: 'category', data: quitztits });
+    }
     const quizDescFieldChange = (e) => {
         let quitzDesc = e.target.value;
         dispatchQuizData({ type: 'description', data: quitzDesc });
@@ -704,17 +704,19 @@ function AddQuizDialog() {
         }
         setBackdropOpen(true);
         console.log('opened class', openedClass);
-        const classRef = doc(db, 'classes', openedClass.classId);
-        const quizesRef = collection(classRef, 'quizes');
+        // const classRef = doc(db, 'classes', openedClass.classId);
+        const quizesRef = collection(db, 'quizes');
         try {
-            const quizSaveResult = await addDoc(quizesRef, quizData);
+            const quizDataItem = { ...quizData, classId: openedClass.classId };
+            const quizSaveResult = await addDoc(quizesRef, quizDataItem);
             try {
 
                 const batch = writeBatch(db);
                 quizDraft.map((item, index) => {
-                    const quizRef = doc(collection(quizesRef, quizSaveResult.id, 'questions'));
+                    const questionItem = { ...item, quizId: quizSaveResult.id, classId: openedClass.classId };
+                    const quizRef = doc(collection(db, 'questions'));
                     console.log('adding item', item);
-                    batch.set(quizRef, item);
+                    batch.set(quizRef, questionItem);
                 });
 
                 batch.commit().then(function () {
@@ -777,33 +779,48 @@ function AddQuizDialog() {
 
                     <div className="row">
                         <Container className='quizContainer'>
-                            <FormControl sx={{ width: '100%', mt: 1 }}>
-                                <TextField fullWidth onChange={quizTitltFieldChange} class='quiz-title' label="Quiz Title" />
+                            <FormControl size='small' fullWidth sx={{ mt: 1 }}>
+                                <TextField size='small' fullWidth onChange={quizTitltFieldChange} class='quiz-title' label="Quiz Title" />
                             </FormControl>
-                            <FormControl fullWidth sx={{ width: '100%', mt: 1 }}>
-                                <TextField fullWidth onChange={quizDescFieldChange} class='quiz-desc' label="Quiz Description" />
+                            <FormControl size='small' fullWidth sx={{ mt: 1 }}>
+                                <TextField size='small' fullWidth onChange={quizDescFieldChange} class='quiz-desc' label="Quiz Description" />
                             </FormControl>
                             <Box sx={{ mb: 2 }}>
-
+                                <FormControl fullWidth>
+                                    <InputLabel size='small' id="select-category">Select Category</InputLabel>
+                                    <Select
+                                        labelId="select-category"
+                                        id="category-select"
+                                        value={quizData.category}
+                                        label="Select Category"
+                                        size='small'
+                                        onChange={quizStatusFieldChange} >
+                                        <MenuItem value={'quizzes'}>Quizzes</MenuItem>
+                                        <MenuItem value={'performance task'}>Performance Task</MenuItem>
+                                        <MenuItem value={'exam'}>Exam</MenuItem>
+                                    </Select>
+                                </FormControl>
                             </Box>
                             <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale='en'>
                                 <div className="row-center">
                                     {/* <InputLabel>Expected End Date and Time</InputLabel> */}
                                     <FormControl>
-                                        <InputLabel id="demo-simple-select-label">Quiz status</InputLabel>
+                                        <InputLabel size='small' id="demo-simple-select-label">Quiz status</InputLabel>
                                         <Select
+                                            size='small'
                                             labelId="demo-simple-select-label"
                                             id="demo-simple-select"
                                             value={quizData.status}
                                             label="Quiz status"
                                             onChange={quizStatusFieldChange} >
                                             <MenuItem value={'draft'}>Draft (Visible only to you)</MenuItem>
-                                            <MenuItem value={'publish'}>Publish (Visible to everyone on this class)</MenuItem>
+                                            <MenuItem value={'publish'}>Publish (Visible to everyone in this class)</MenuItem>
                                         </Select>
                                     </FormControl>
                                     <FormControl>
-                                        <InputLabel id="demo-simple-select-label">Period</InputLabel>
+                                        <InputLabel size='small' id="demo-simple-select-label">Period</InputLabel>
                                         <Select
+                                            size='small'
                                             labelId="demo-simple-select-label"
                                             id="demo-simple-select"
                                             value={quizData.period}
@@ -814,9 +831,9 @@ function AddQuizDialog() {
                                             <MenuItem value={'finals'}>Finals</MenuItem>
                                         </Select>
                                     </FormControl>
-                                    <MobileDateTimePicker onAccept={quizStartDateFieldChange} defaultValue={dayjs()} label="Expected start date and time" />
+                                    <MobileDateTimePicker onAccept={quizStartDateFieldChange} size='small' defaultValue={dayjs()} label="Expected start date and time" />
                                     {/* <InputLabel>Count</InputLabel> */}
-                                    <MobileDateTimePicker onAccept={quizEndDateFieldChange} label="Expected end date and time" />
+                                    <MobileDateTimePicker onAccept={quizEndDateFieldChange} size='small' label="Expected end date and time" />
 
                                 </div>
 

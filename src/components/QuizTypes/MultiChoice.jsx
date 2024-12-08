@@ -1,6 +1,7 @@
 import React, { useState, useContext } from 'react'
 import { Container, Dialog, DialogActions, DialogContent, DialogTitle, DialogContentText, Tooltip, Chip, Stack, RadioGroup, FormLabel, FormControl, FormControlLabel, Checkbox, Radio, InputLabel, TextField, Stepper, Step, StepLabel, StepContent, Box, Paper, Typography, FormGroup } from '@mui/material';
 import { QuizResponseContext } from '../../AppContext';
+import { getQuestionScore } from '../../Utils';
 const MultiChoice = (props) => {
     const [questData, setQuestData] = useState({ ...props.questionData });
     const [choiceItems, setChoiceItems] = useState([...props.choices]);
@@ -10,22 +11,32 @@ const MultiChoice = (props) => {
     });
     const selectedItem = (event, item, value) => {
         // console.log('selectedValue', event.target.checked, item);
+        let response;
+
         if (questionResponse.selectedAnsers.indexOf(value) === -1 && event.target.checked) {
-            const response = [...questionResponse.selectedAnsers, value];
+            response = [...questionResponse.selectedAnsers, value];
             setQuestionResponse({ ...questionResponse, selectedAnsers: response });
-            console.log('anser before', questionResponse.selectedAnsers);
-            console.log('anser after', response);
         } else {
-            const response = [...questionResponse.selectedAnsers];
+            response = [...questionResponse.selectedAnsers];
             const indexToRemove = response.indexOf(value);
             if (indexToRemove !== -1) {
                 response.splice(indexToRemove, 1);
             }
-            console.log('answer before', questionResponse.selectedAnsers);
-            console.log('answer after', response);
-
             setQuestionResponse({ ...questionResponse, selectedAnsers: response });
         }
+        const points = getQuestionScore(questData, response);
+        console.log('points', points);
+        const answerData = {
+            response: response,
+            type: questData.type,
+            points: points
+        }
+        dispatchResponse({
+            type: 'setMultipleChoiceResponse',
+            id: props.questionData,
+            data: answerData,
+            question: questData
+        });
 
     }
     return (

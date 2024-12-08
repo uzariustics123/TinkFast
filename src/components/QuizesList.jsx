@@ -44,8 +44,8 @@ function QuizesList() {
     }, []);
     const getPrelimQuizes = async () => {
         const classRef = doc(db, 'classes', openedClass.classId);
-        const quizRef = collection(classRef, 'quizes');
-        const filteredQuery = query(quizRef, where('period', '==', 'prelim'));
+        const quizRef = collection(db, 'quizes');
+        const filteredQuery = query(quizRef, where('period', '==', 'prelim'), where('classId', '==', openedClass.classId));
         try {
             const querySnapshot = await getDocs(filteredQuery);
             const quizList = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
@@ -53,15 +53,15 @@ function QuizesList() {
                 type: 'setQuizes',
                 data: quizList
             });
-            console.log('quiz list', quizList);
+            // console.log('quiz list', quizList);
         } catch (error) {
             console.log(error);
         }
     }
     const getMidtermQuizes = async () => {
         const classRef = doc(db, 'classes', openedClass.classId);
-        const quizRef = collection(classRef, 'quizes');
-        const filteredQuery = query(quizRef, where('period', '==', 'midterm'));
+        const quizRef = collection(db, 'quizes');
+        const filteredQuery = query(quizRef, where('period', '==', 'midterm'), where('classId', '==', openedClass.classId));
         try {
             const querySnapshot = await getDocs(filteredQuery);
             const quizList = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
@@ -69,15 +69,15 @@ function QuizesList() {
                 type: 'setQuizes',
                 data: quizList
             });
-            console.log('quiz list', quizList);
+            // console.log('quiz list', quizList);
         } catch (error) {
             console.log(error);
         }
     }
     const getFinalsQuizes = async () => {
         const classRef = doc(db, 'classes', openedClass.classId);
-        const quizRef = collection(classRef, 'quizes');
-        const filteredQuery = query(quizRef, where('period', '==', 'midterm'));
+        const quizRef = collection(db, 'quizes');
+        const filteredQuery = query(quizRef, where('period', '==', 'final'), where('classId', '==', openedClass.classId));
         try {
             const querySnapshot = await getDocs(filteredQuery);
             const quizList = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
@@ -85,7 +85,7 @@ function QuizesList() {
                 type: 'setQuizes',
                 data: quizList
             });
-            console.log('quiz list', quizList);
+            // console.log('quiz list', quizList);
         } catch (error) {
             console.log(error);
         }
@@ -99,8 +99,8 @@ function QuizesList() {
             getFinalsQuizes();
     }
     const onQuizStatusChange = async (e, item) => {
-        const classRef = doc(db, 'classes', openedClass.classId);
-        const quizesRef = collection(classRef, 'quizes');
+        // const classRef = doc(db, 'classes', openedClass.classId);
+        const quizesRef = collection(db, 'quizes');
         const quizDoc = doc(quizesRef, item.id);
         console.log('status', e.target.value);
         dispathQuizes({
@@ -157,6 +157,7 @@ function QuizesList() {
                             <ListItem sx={{ borderRadius: '24px', cursor: 'pointer' }} button={true} key={item.id} onClick={() => { }} alignItems="flex-start"
                                 secondaryAction={openedClass.classRole == 'teacher' ?
                                     <Stack spacing={1} direction={'row'}>
+                                        <Chip sx={{ alignSelf: 'center' }} size='small' label='View Responses' onClick={() => { }} variant='outlined' />
                                         <FormControl sx={{ minWidth: '100px' }} variant='standard' >
                                             <InputLabel id="demo-simple-select-label">Status</InputLabel>
                                             <Select
@@ -171,10 +172,9 @@ function QuizesList() {
                                                 <MenuItem value={'publish'}>Publish</MenuItem>
                                             </Select>
                                         </FormControl>
-                                        <IconButton onClick={() => editQuiz(item)} size='small' sx={{ minWidth: '50px' }} edge="end" aria-label="save">
-                                            <span style={{ fontSize: '24px' }} className='material-symbols-rounded'>edit</span>
+                                        <IconButton onClick={() => editQuiz(item)} size='small' sx={{ width: '25px', height: '25px', alignSelf: 'center' }} edge="end" aria-label="save">
+                                            <span style={{ fontSize: '18px' }} className='material-symbols-rounded'>edit</span>
                                         </IconButton>
-                                        {/* <Chip label='Save' onClick={() => { }} variant='outlined' /> */}
                                     </Stack>
                                     :
                                     openedClass.classRole == 'student' ?
@@ -224,7 +224,7 @@ function QuizesList() {
                         </md-fab>
                         <AddQuizDialog></AddQuizDialog>
                     </>}
-                {openedClass.classRole == 'student' && <QuizView ></QuizView>}
+                {(openedClass.classRole == 'student') && <QuizView ></QuizView>}
             </QuizContext.Provider >
         </>
     );

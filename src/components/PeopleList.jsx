@@ -37,8 +37,6 @@ function PeopleList(props) {
         let participantsUIDs = [];
         let participantsList = [];
         let participantsMembershipData = [];
-        let teachersList = [];
-        let studentsList = [];
         try {
             const querySnapshot = await getDocs(filteredQuery);
             querySnapshot.forEach((doc) => {

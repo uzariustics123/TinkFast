@@ -8,6 +8,7 @@ import './styles/classView.css';
 import PeopleList from './PeopleList';
 import QuizesList from './QuizesList';
 import { AppContext, ClassContext } from '../AppContext';
+import ClassRemarks from './ClassRemarks';
 
 function ClassView(props) {
     const [userData, setUserData] = useState(null);
@@ -65,7 +66,7 @@ function ClassView(props) {
                         <PeopleList userData={currentUserData} classData={openedClass} />
                         : <></>
                     }
-                    {selectedTab === 2 ? 'tab 3' : <></>}
+                    {selectedTab === 2 ? <ClassRemarks /> : <></>}
                 </div>
                 :
                 <>

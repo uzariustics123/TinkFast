@@ -1,5 +1,5 @@
-import React, { forwardRef, useContext, useEffect, useReducer, useRef } from 'react'
-import { Container, Dialog, DialogActions, DialogContent, DialogTitle, DialogContentText, Tooltip, Chip, Stack, RadioGroup, FormLabel, FormControl, FormControlLabel, Radio, InputLabel, TextField, Stepper, Step, StepLabel, StepContent, Box, Paper, Input, Select, MenuItem, Slide, AppBar, Toolbar, IconButton, Card, CardContent, CardActions, Typography, Button } from '@mui/material';
+import React, { forwardRef, useContext, useEffect, useReducer, useRef, useState } from 'react'
+import { Container, Dialog, DialogActions, DialogContent, DialogTitle, DialogContentText, Tooltip, Chip, Stack, RadioGroup, FormLabel, FormControl, FormControlLabel, Radio, InputLabel, TextField, Stepper, Step, StepLabel, StepContent, Box, Paper, Input, Select, MenuItem, Slide, AppBar, Toolbar, IconButton, Card, CardContent, CardActions, Typography, Button, Alert } from '@mui/material';
 import { AppContext, ClassContext, QuizContext, QuizResponseContext } from '../AppContext';
 import { Swiper, SwiperSlide, useSwiper } from 'swiper/react';
 import { collection, addDoc, query, getDoc, getDocs, where, doc, updateDoc } from "firebase/firestore"
@@ -27,8 +27,10 @@ export const QuizView = () => {
     const swiperRef = useRef(null);
     const swiper = useSwiper();
     const { openedClass } = useContext(ClassContext);
-    const { setSnackbarOpen, setSnackbarMsg } = useContext(AppContext);
+    const { setSnackbarOpen, setSnackbarMsg, currentUserData, setBackdropOpen } = useContext(AppContext);
     const { quizOpenDialog, setQuizOpenDialog, quizOpenData, setQuizOpenData } = useContext(QuizContext);
+    const [activeQIndex, setActiveQIndex] = useState(0);
+
 
     const [quizQuiestions, dispatchQuestion] = useReducer((currentQuestions, action) => {
         if (action.type === 'setQuestions') {
@@ -36,20 +38,87 @@ export const QuizView = () => {
         }
         return currentQuestions;
     }, []);
-    const [quizResponse, dispatchResponse] = useReducer((currentResponse, action) => {
 
-    }, [{}]);
+    const [quizResponse, dispatchResponse] = useReducer((currentResponse, action) => {
+        const question = action.question;
+        const responseData = { ...currentResponse };
+        const userResponse = action.data;
+        switch (action.type) {
+            case 'setSingleChoiceResponse':
+                responseData.questionResponse[question.id] = userResponse;
+                console.log('respnse', responseData);
+                return responseData;
+            case 'setMultipleChoiceResponse':
+                responseData.questionResponse[question.id] = userResponse;
+                console.log('respnse', responseData);
+                return responseData;
+            case 'setMatchingTypeResponse':
+                responseData.questionResponse[question.id] = userResponse;
+                console.log('respnse', responseData);
+                return responseData;
+            case 'setEssayResponse':
+                responseData.questionResponse[question.id] = userResponse;
+                console.log('respnse', responseData);
+                return responseData;
+            case 'reset':
+                const resetData = {
+                    score: 0,
+                    status: 'partial',
+                    category: 'quiz',
+                    uid: currentUserData.uid,
+                    classId: openedClass.classId,
+                    questionResponse: {}
+                }
+                return resetData;
+            default:
+                return currentResponse;
+        }
+
+    }, {
+        score: 0,
+        status: 'partial',
+        category: 'quiz',
+        uid: currentUserData.uid,
+        classId: openedClass.classId,
+        questionResponse: {}
+    });
+    const [cheatingAttempts, setCheatingAttempt] = useState(0);
+    // page iactivity detection
+
+    useEffect(() => {
+        let cheatLimits = cheatingAttempts;
+        const openPanel = quizOpenDialog;
+        const handleVisibilityChange = () => {
+            if (document.hidden && quizOpenDialog) {
+                setCheatingAttempt(cheatLimits += 1);
+                console.log('cheating dialog', quizOpenDialog);
+            }
+            console.log('cheating attempt ', document.hidden);
+
+        };
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+        return () => {
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+        };
+    }, [quizOpenDialog]);
+    // first load
     useEffect(() => {
         getQuestions();
+        setActiveQIndex(0);
+        dispatchResponse({
+            type: 'reset'
+        });
+        setCheatingAttempt(0);
     }, [quizOpenData]);
 
     const getQuestions = async () => {
-        const classRef = doc(db, 'classes', openedClass.classId);
-        const quizesRef = collection(classRef, 'quizes');
-        const quizDoc = doc(quizesRef, quizOpenData.id);
-        const questionRefs = collection(quizDoc, 'questions');
+        // const classRef = doc(db, 'classes', openedClass.classId);
+        // const quizesRef = collection(classRef, 'quizes');
+        // const quizDoc = doc(quizesRef, quizOpenData.id);
+        const questionRefs = collection(db, 'questions');
+        const filteredQuery = query(questionRefs, where('quizId', '==', quizOpenData.id), where('classId', '==', openedClass.classId));
         try {
-            const querySnapshot = await getDocs(questionRefs);
+            const querySnapshot = await getDocs(filteredQuery);
             querySnapshot.docs.forEach((item) => {
                 console.log(item.data());
 
@@ -64,28 +133,90 @@ export const QuizView = () => {
             console.log(error);
         }
     }
-    const nextSlide = (e) => {
-        if (swiperRef.current) {
-            swiperRef.current.slideNext(); // Navigate to the next slide
-        } else {
-            console.log(swiperRef.current);
-            console.log('swps', swiper);
+    const saveQuizResponse = () => {
+        const responseRef = collection(db, 'QuizResponses');
+        setBackdropOpen(false);
+        try {
 
+            const saveResult = addDoc(responseRef, quizResponse);
+            setSnackbarMsg(true);
+            setSnackbarMsg('Your response has been saved');
+            setQuizOpenDialog(false);
+
+        } catch (error) {
+            console.log(JSON.stringify(quizResponse));
+            console.log(quizResponse);
+
+            console.log(error);
+            setSnackbarOpen(true);
+            setSnackbarMsg(error.message);
         }
+        setBackdropOpen(false);
     }
-    function SlideNextButton() {
+    const SlideNextButton = (props) => {
+        const newprop = { ...props };
+        const item = props.item;
+        const type = item.type;
+        const index = quizQuiestions.indexOf(item);
         const swiper = useSwiper();
+        const foundResponse = quizResponse.questionResponse[item.id];
+        newprop.disabled = foundResponse == undefined;
+        if (foundResponse != undefined)
+            switch (type) {
+                case 'essay':
+                    // newprop.disabled = foundResponse.;
+                    break;
+                case 'multiChoice':
+                    newprop.disabled = foundResponse.response.length < 1;
+                    break;
+                case 'singleChoice':
+                    break;
+                case 'matchingType':
+                    newprop.disabled = Object.keys(foundResponse.response).length < 1;
+                    break;
+                default:
+                    break;
+            }
         const clickbtn = (e) => {
+            console.log('index of ', item.question, quizQuiestions.indexOf(item));
+            if (index == (quizQuiestions.length - 1)) {
+                // save response
+                saveQuizResponse();
+            }
             swiper.slideNext()
         }
-        return <Button onClick={clickbtn}>Next Question</Button>;
+        return <Button {...newprop} onClick={clickbtn}>{(index == (quizQuiestions.length - 1)) ? 'Save' : 'Next'}</Button>;
     }
-    function SlidePrevButton() {
+    const SlidePrevButton = (props) => {
+        const newprop = { ...props };
+        const item = props.item;
+        const type = item.type;
+        const index = quizQuiestions.indexOf(item);
         const swiper = useSwiper();
+        switch (type) {
+            case 'essay':
+                break;
+            case 'multiChoice':
+                break;
+            case 'singleChoice':
+                break;
+            case 'matchingType':
+                break;
+
+            default:
+                break;
+        }
+
+        newprop.disabled = index == 0;
         const clickbtn = (e) => {
+            console.log('index of ', item.question, quizQuiestions.indexOf(item));
             swiper.slidePrev()
         }
-        return <Button onClick={clickbtn}>Previous Question</Button>;
+        return <Button {...newprop} onClick={clickbtn}>Previous</Button>;
+    }
+    const onSlideChange = (swiper) => {
+        // console.log('active item', swiper.activeIndex);
+        setActiveQIndex(swiper.activeIndex);
     }
 
     /**
@@ -105,7 +236,7 @@ export const QuizView = () => {
                             <IconButton
                                 edge="start"
                                 color={'#000'}
-                                onClick={() => { setQuizOpenDialog(!quizOpenDialog) }}
+                                onClick={() => { setQuizOpenDialog(false) }}
                                 aria-label="close">
                                 <md-icon>arrow_back</md-icon>
                             </IconButton>
@@ -114,13 +245,18 @@ export const QuizView = () => {
                     </AppBar>
                     <div className='quizPager' style={{
                     }}>
+                        {cheatingAttempts > 0 && <Box direction='row' sx={{ m: 2 }}><Alert severity={cheatingAttempts > 2 ? "error" : 'warning'}>{
+                            cheatingAttempts == 1 ? `Warning! Cheating attempt detected. Please avoid switching tabs/apps when taking a quiz. \nCheat attempts: ${cheatingAttempts}` :
+                                cheatingAttempts == 2 ? 'Take this seriously! Attempts ' + cheatingAttempts + '/3' :
+                                    cheatingAttempts > 2 ? `Quiz won't be recorded! Attempts 3/3` :
+                                        <></>}</Alert></Box>}
                         <Swiper
-                            useRef={swiperRef}
+                            // useRef={swiperRef}
                             spaceBetween={1}
                             effect="cards"
                             modules={[EffectCards]}
                             slidesPerView={1}
-                            onSlideChange={() => console.log('slide change')}
+                            onSlideChange={onSlideChange}
                             onSwiper={(swiper) => { swiperRef.current = swiper }}
                             allowSlideNext={true}
                             noSwiping={true}
@@ -129,35 +265,29 @@ export const QuizView = () => {
                             style={{ width: '80%', minHeight: '25rem' }}
                         >
 
-                            {quizQuiestions.map((quiz, index) => (
+                            {quizQuiestions.map((quiz, index) => {
 
-                                <SwiperSlide key={quiz.id}>
+                                return (<SwiperSlide key={quiz.id}>
                                     <Card className="swiper-no-swiping" variant="outlined">
                                         <CardContent>
+                                            asdf{swiperRef.current.activeIndex}
                                             {quiz.type == 'essay' && <Essay questionData={quiz} />}
                                             {quiz.type == 'multiChoice' && <MultiChoice questionData={quiz} choices={quiz.choices} />}
                                             {quiz.type == 'singleChoice' && <SingleChoice questionData={quiz} choices={quiz.choices} />}
                                             {quiz.type == 'matchingType' && <MatchingType questionData={quiz} choices={quiz.choices} />}
-                                            {/* <Typography gutterBottom sx={{ color: 'text.secondary', fontSize: 14 }}>
-                                            Word of the Day
-                                        </Typography> */}
-                                            {/* <Typography variant="h5" component="div">
-                                            benevolent
-                                        </Typography> */}
-                                            {/* <Typography sx={{ color: 'text.secondary', mb: 1.5 }}>adjective</Typography> */}
-                                            {/* <Typography variant="body2">
-                                            Lorem ipsum dolor sit amet consectetur, adipisicing elit. Hic voluptatibus ipsam harum exercitationem doloribus magni repellendus repellat veniam molestiae! Voluptatem asperiores consequuntur non sed ab atque molestiae quisquam repellat. Corporis! Lorem ipsum dolor sit amet consectetur adipisicing elit. Quasi quod excepturi quos esse. Quisquam voluptas ut libero vitae. Ratione, quas? Quisquam consequuntur sit odio commodi debitis modi exercitationem sequi minima. Lorem ipsum dolor sit amet consectetur, adipisicing elit. Perferendis debitis modi assumenda quam exercitationem impedit eligendi alias id veritatis excepturi blanditiis soluta, dolorum dolorem ipsa quaerat praesentium, accusantium ea inventore. Lorem ipsum dolor sit amet consectetur adipisicing elit. Reiciendis, voluptatum? Modi itaque suscipit, debitis, inventore enim illum architecto dignissimos sequi hic quaerat perferendis libero dolore corporis ipsa. Dolorem, est nemo! Lorem ipsum dolor sit amet consectetur adipisicing elit. Laudantium error deserunt doloribus aliquid numquam non doloremque repellendus enim soluta magni, tenetur cum quae, dolore veritatis. Ducimus laboriosam est quae ipsam!
-                                        </Typography> */}
 
                                         </CardContent>
                                         <CardActions>
-                                            {/* <Button onClick={nextSlide} size="small">Next</Button> */}
-                                            <SlidePrevButton />
-                                            <SlideNextButton />
+                                            {activeQIndex == index &&
+                                                <>
+                                                    <SlidePrevButton item={quiz} />
+                                                    <SlideNextButton item={quiz} />
+                                                </>
+                                            }
                                         </CardActions>
                                     </Card>
-                                </SwiperSlide>
-                            ))}
+                                </SwiperSlide>)
+                            })}
                         </Swiper>
                     </div>
                 </Dialog>

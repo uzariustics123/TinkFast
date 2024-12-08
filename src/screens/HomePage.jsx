@@ -79,6 +79,7 @@ function HomePage({ selectedClassCallback }) {
                     classId: classCreation.id,
                     classRole: 'teacher',
                     uid: currentUser.uid,
+                    status: 'accepted'
                 });
                 Store.addNotification({
                     title: "Nice!",

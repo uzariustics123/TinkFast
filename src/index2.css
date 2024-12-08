@@ -29,7 +29,7 @@
   line-height: 1.5;
   font-weight: 400;
   height: 100%;
-  color-scheme: light dark;
+  color-scheme: dark;
   --light-bg: #eefff6;
   background-color: var(--light-bg);
   --primary-light: rgba(0, 193, 93) !important;

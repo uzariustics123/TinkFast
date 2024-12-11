@@ -18,6 +18,7 @@ import Essay from './QuizTypes/Essay';
 import MultiChoice from './QuizTypes/MultiChoice';
 import SingleChoice from './QuizTypes/SingleChoice';
 import MatchingType from './QuizTypes/MatchingType';
+import { getQuizScore } from '../Utils';
 
 const Transition = forwardRef(function Transition(props, ref) {
     return <Slide direction="up" ref={ref} {...props} />;
@@ -46,27 +47,25 @@ export const QuizView = () => {
         switch (action.type) {
             case 'setSingleChoiceResponse':
                 responseData.questionResponse[question.id] = userResponse;
-                console.log('respnse', responseData);
                 return responseData;
             case 'setMultipleChoiceResponse':
                 responseData.questionResponse[question.id] = userResponse;
-                console.log('respnse', responseData);
                 return responseData;
             case 'setMatchingTypeResponse':
                 responseData.questionResponse[question.id] = userResponse;
-                console.log('respnse', responseData);
                 return responseData;
             case 'setEssayResponse':
                 responseData.questionResponse[question.id] = userResponse;
-                console.log('respnse', responseData);
                 return responseData;
             case 'reset':
                 const resetData = {
                     score: 0,
                     status: 'partial',
-                    category: 'quiz',
+                    category: quizOpenData.category,
+                    quizId: quizOpenData.id,
                     uid: currentUserData.uid,
                     classId: openedClass.classId,
+
                     questionResponse: {}
                 }
                 return resetData;
@@ -137,10 +136,12 @@ export const QuizView = () => {
         const responseRef = collection(db, 'QuizResponses');
         setBackdropOpen(false);
         try {
-
-            const saveResult = addDoc(responseRef, quizResponse);
-            setSnackbarMsg(true);
+            const finalData = { ...quizResponse };
+            finalData.score = getQuizScore(finalData.questionResponse);
+            const saveResult = addDoc(responseRef, finalData);
+            // console.log('finaldata', finalData);
             setSnackbarMsg('Your response has been saved');
+            setSnackbarMsg(true);
             setQuizOpenDialog(false);
 
         } catch (error) {
@@ -148,8 +149,8 @@ export const QuizView = () => {
             console.log(quizResponse);
 
             console.log(error);
-            setSnackbarOpen(true);
             setSnackbarMsg(error.message);
+            setSnackbarOpen(true);
         }
         setBackdropOpen(false);
     }

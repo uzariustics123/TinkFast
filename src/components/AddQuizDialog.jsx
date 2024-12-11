@@ -73,7 +73,7 @@ function AddQuizDialog() {
         description: '',
         status: 'draft',
         period: 'prelim',
-        category: 'quizzes',
+        category: 'quiz',
         expectedStartDateTime: dayjs().format('MM/DD/YYYY hh:mm A'),
         expectedEndDateTime: '',
     });
@@ -794,8 +794,8 @@ function AddQuizDialog() {
                                         value={quizData.category}
                                         label="Select Category"
                                         size='small'
-                                        onChange={quizStatusFieldChange} >
-                                        <MenuItem value={'quizzes'}>Quizzes</MenuItem>
+                                        onChange={quizCategoryFieldChange} >
+                                        <MenuItem value={'quiz'}>Quiz</MenuItem>
                                         <MenuItem value={'performance task'}>Performance Task</MenuItem>
                                         <MenuItem value={'exam'}>Exam</MenuItem>
                                     </Select>

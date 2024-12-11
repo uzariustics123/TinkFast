@@ -1,17 +1,79 @@
-import React, { useContext, useEffect, useState } from 'react'
-import { ReactGrid } from '@silevis/reactgrid'
-import '@silevis/reactgrid/styles.css'
+import React, { useContext, useEffect, useReducer, useState } from 'react'
 import { collection, doc, getDocs, query, where } from 'firebase/firestore'
 import { db } from './Firebase';
+import { DataGrid } from '@mui/x-data-grid';
 import { AppContext, ClassContext } from '../AppContext';
 const ClassRemarks = () => {
     const { openedClass } = useContext(ClassContext);
-    const [rows, setRows] = useState([
-        { studentID: 1, firstname: 'John', lastname: 'Doe' },
-        { studentID: 2, firstname: 'Jane', lastname: 'Boston' },
-        // Add more rows as needed
-    ]);
+    const [acts, setActs] = useReducer((currentQuizes, action) => {
+        console.log('called', action);
+        const type = action.type;
+        switch (type) {
+            case 'setQuizes':
+                const newData =
+                {
+                    quizes: [...action.data.filter(item => item.category == 'quiz')],
+                    pt: [...action.data.filter(item => item.category == 'performance task')],
+                    exams: [...action.data.filter(item => item.category == 'exam')]
+                };
+                console.log('data ', newData);
+                return newData;
 
+            default:
+        }
+        return currentQuizes;
+    }, {
+        pt: [],
+        quizes: [],
+        exams: []
+    });
+    const [rows, setRows] = useState([]);
+    const [responses, setResponses] = useState([]);
+    const fetchData = async () => {
+        await getQuizes();
+        await getResponseQuizes();
+        await getClassStudents();
+    };
+    useEffect(() => {
+        fetchData();
+    }, []);
+    const getQuizes = async () => {
+        let quizesGot = [];
+        try {
+            const quizRef = collection(db, 'quizes');
+            const classQuery = query(quizRef, where('classId', '==', openedClass.id), where('status', '==', 'publish'));
+            const queryResult = await getDocs(classQuery);
+            console.log('query result: ' + queryResult);
+
+            quizesGot = queryResult.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setActs({
+                type: 'setQuizes',
+                data: quizesGot
+            });
+            // queses = quizesGot;
+            console.log('Quizes got: ', quizesGot);
+
+        } catch (error) {
+            console.log('error getting quizes', error);
+        }
+    }
+    const getResponseQuizes = async () => {
+        let gotResponses = [];
+        try {
+            const quizRef = collection(db, 'QuizResponses');
+            const classQuery = query(quizRef, where('classId', '==', openedClass.id));
+            const queryResult = await getDocs(classQuery);
+            // console.log('query result: ' + queryResult);
+
+            gotResponses = queryResult.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setResponses(gotResponses);
+            // queses = gotResponses;
+            console.log('Responses got: ', gotResponses);
+
+        } catch (error) {
+            console.log('error getting responses', error);
+        }
+    }
     const getClassStudents = async () => {
         console.log('getting students');
         const participants = [];
@@ -56,39 +118,75 @@ const ClassRemarks = () => {
         // console.log('teachers', participantsUIDs);
 
     };
+    const xcolumns = [
+        { field: 'studentID', headerName: 'ID number', width: 100 },
+        { field: 'name', headerName: 'Name', width: 200 },
+        ...[...acts.quizes, ...acts.pt, ...acts.exams].map((quiz, index) => ({
+            field: quiz.id.toString(),
+            headerName: (quiz.category == 'quiz' ? 'Quiz ' : quiz.category == 'performance task' ? 'PT ' : quiz.category == 'exam' ? 'Exam ' : '') + (index + 1),
+            width: quiz.category == 'performance task' ? 200 : 100,
+            editable: true,
+            description: quiz.title + ' - ' + quiz.description,
+        })),
+        { field: 'performance', headerName: 'Performance', width: 200 },
+    ];
+    const xgetGridRows = () => {
+        let griddata = rows.map((row) => {
+            const rowData = {
+                id: row.uid,
+                studentID: row.studentID,
+                name: `${row.firstname} ${row.lastname}`,
+            };
 
-    useEffect(() => {
-        getClassStudents();
+            [...acts.quizes, ...acts.pt, ...acts.exams].forEach((quiz) => {
+                const response = responses.find(item => item.uid === row.uid && item.quizId === quiz.id);
+                rowData[quiz.id] = response ? response.score : '--';
+            });
 
-    }, [])
-    const columns = [
-        { columnId: 'studentID', width: 100 },
-        { columnId: 'firstname', width: 200 },
-        { columnId: 'lastname', width: 200 },
-    ]
+            return rowData;
+        });
+        return griddata;
+    };
+    const xcolumnGroupingModel = [
+        {
+            groupId: 'Student Info',
+            description: '',
+            children: [
+                { field: 'studentID' },
+                { field: 'name' },
+            ],
+        },
+        {
+            groupId: 'Activities',
+            children: [
+                {
+                    groupId: 'Quizzes',
+                    children: [
+                        ...acts.quizes.map((quiz) => ({
+                            field: quiz.id.toString()
+                        })),
+                    ]
+                },
+                {
+                    groupId: 'Performance Tasks',
+                    children: [
+                        ...acts.pt.map((quiz) => ({
+                            field: quiz.id.toString()
+                        })),
+                    ]
+                },
+                {
+                    groupId: 'Exams',
+                    children: [
+                        ...acts.exams.map((quiz) => ({
+                            field: quiz.id.toString()
+                        })),
+                    ]
+                },
+            ],
+        },
+    ];
 
-    const getGridData = () => {
-
-
-        return [
-            {
-                rowId: 'header',
-                cells: [
-                    { type: 'header', text: 'ID number' },
-                    { type: 'header', text: 'First Name' },
-                    { type: 'header', text: 'Last Name' },
-                ],
-            },
-            ...rows.map((row) => ({
-                rowId: row.id,
-                cells: [
-                    { type: 'text', text: row.studentID.toString() },
-                    { type: 'text', text: row.firstname },
-                    { type: 'text', text: row.lastname },
-                ],
-            })),
-        ]
-    }
 
     const handleChanges = (changes) => {
         setRows((prevRows) => {
@@ -106,13 +204,28 @@ const ClassRemarks = () => {
         })
     }
     return (
-        <div style={{ height: 'auto', width: '100%', color: 'black' }}>
-            <ReactGrid
-                rows={getGridData()}
-                columns={columns}
-                onCellsChanged={handleChanges}
+        <>
+            <DataGrid
+                rows={xgetGridRows()}
+                columns={xcolumns}
+                pageSize={5}
+                rowsPerPageOptions={[5]}
+                // checkboxSelection
+                disableSelectionOnClick
+                disableColumnSelector
+                columnGroupingModel={xcolumnGroupingModel}
             />
-        </div>
+        </>
+        // <div style={{ height: 'auto', width: '100%', color: 'black' }}>
+        //     <ReactGrid
+        //         rows={getGridData()}
+        //         columns={columns}
+        //         onCellsChanged={handleChanges} 
+        //         enableGroupIdRender={true}
+        //         stickyLeftColumns={1}
+        //     />
+
+        // </div>
     )
 }
 

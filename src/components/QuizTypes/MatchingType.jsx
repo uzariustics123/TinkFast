@@ -28,19 +28,20 @@ const MatchingType = (props) => {
                         const [textValue, setTextValue] = useState('--------------------');
                         const onItemDrop = (e) => {
                             const value = e.dataTransfer.getData('value');
-                            console.log(' value', e.dataTransfer.getData('text/plain'));
-                            console.log('test', value);
+                            // console.log(' value', e.dataTransfer.getData('text/plain'));
+                            // console.log('test', value);
                             const response = { ...questionResponse };
                             response[item.desc] = value;
                             setTextValue(value);
                             setQuestionResponse(response);
                             const points = getQuestionScore(questData, response);
-                            console.log('points', points);
+                            console.log('points mt', points);
                             const answerData = {
                                 response: response,
                                 type: questData.type,
-                                points: questData.points
+                                points: points
                             }
+                            console.log('data ', answerData);
                             dispatchResponse({
                                 type: 'setMatchingTypeResponse',
                                 id: props.questionData,
@@ -57,7 +58,7 @@ const MatchingType = (props) => {
                                 delete response[item.desc];
                                 setQuestionResponse(response);
                                 const points = getQuestionScore(questData, response);
-                                console.log('points', points);
+                                console.log('response', response);
                                 const answerData = {
                                     response: response,
                                     type: questData.type,

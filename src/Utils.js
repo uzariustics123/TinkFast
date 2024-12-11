@@ -1,5 +1,5 @@
 export const getQuestionScore = (question, response) => {
-    console.log('type: ' + question.type);
+    // console.log('type: ' + question.type);
 
     switch (question.type) {
         case 'singleChoice':
@@ -23,4 +23,15 @@ export const getQuestionScore = (question, response) => {
         default:
             return 0;
     }
+}
+
+export const getQuizScore = (questionResopnses) => {
+    let scores = 0;
+    console.log('getQuizScore', questionResopnses);
+
+    Object.keys(questionResopnses).map(key => {
+        scores += questionResopnses[key].points;
+    }
+    );
+    return scores;
 }

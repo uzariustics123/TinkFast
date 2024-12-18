@@ -128,3 +128,11 @@ div[class^="rnc__notification-container--"]:has(> .rnc__notification) {
     --_outline-color: red;
     --_hover-state-layer-color: red;
 }
+
+.MuiListItem-root {
+    @media (max-width:600px) {
+        flex-direction: column !important;
+        min-height: auto;
+        padding: 1rem;
+    }
+}

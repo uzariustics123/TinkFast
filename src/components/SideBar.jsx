@@ -101,11 +101,11 @@ function Sidebar({ onMenuItemClick, activeItem }) {
                         <span className="material-symbols-rounded"> checklist </span>
                         <span className="drawer-item-title">Todo's</span>
                     </li>
-                    <li onClick={() => handleItemClick('quizes')} className={'quizes' == currentItem ? 'drawer-item active' : 'drawer-item'}>
+                    {/* <li onClick={() => handleItemClick('quizes')} className={'quizes' == currentItem ? 'drawer-item active' : 'drawer-item'}>
                         <md-ripple></md-ripple>
                         <span className="material-symbols-rounded">history_edu</span>
                         <span className="drawer-item-title">Quizes</span>
-                    </li>
+                    </li> */}
                 </ul>
                 <p className='menu-sub'>Accessibilities</p>
                 <ul className="drawer-menu">

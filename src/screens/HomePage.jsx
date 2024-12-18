@@ -6,7 +6,7 @@ import { auth, db } from '../components/Firebase';
 import { collection, addDoc, query, where, getDoc, getDocs, doc } from "firebase/firestore";
 import { Store } from 'react-notifications-component';
 import ClassList from '../components/ClassList';
-import { Button, Snackbar, Dialog, DialogContent, DialogActions, DialogContentText, DialogTitle, TextField } from "@mui/material";
+import { Button, Snackbar, Dialog, DialogContent, DialogActions, DialogContentText, DialogTitle, TextField, Chip, colors } from "@mui/material";
 import { AppContext, ClassContext } from '../AppContext';
 
 function HomePage({ selectedClassCallback }) {
@@ -214,7 +214,7 @@ function HomePage({ selectedClassCallback }) {
                     </div>
                 </form>
                 <div slot="actions">
-                    <md-text-button type='button' onClick={() => document.getElementById('create-class-dialog').close()} value='cancel'>Cancel</md-text-button>
+                    <md-text-button onClick={() => document.getElementById('create-class-dialog').close()} value='cancel'>Cancel</md-text-button>
                     <md-filled-button type='submit' form="create-dialog-id">Create</md-filled-button>
                 </div>
             </md-dialog>
@@ -225,14 +225,10 @@ function HomePage({ selectedClassCallback }) {
                 <p className='banner-msg'>Join a class, start a quiz or engage with others by sharing your thoughts. Join the fun of learning!</p>
                 <Player className='home-anim' autoplay loop src="/anims/home-anim.json" />
                 <div className="banner-actions">
-                    <md-filled-button onClick={createClassPrompt} >
-                        <span slot='icon' className="material-symbols-outlined">add</span>
-                        Create Class
-                    </md-filled-button>
-                    <md-outlined-button onClick={() => { setJoinClassDialogOpen(!joinClassDialogOpen) }}>
-                        <span slot='icon' className="material-symbols-outlined">group_add</span>
-                        Join Class
-                    </md-outlined-button>
+                    <Chip sx={{ borderColor: colors.green[900], color: colors.green[800], fontWeight: 'bold' }} variant='outlined' onClick={createClassPrompt} icon={<span slot='icon' className="material-symbols-outlined">add</span>} label='Create Class'>
+                    </Chip>
+                    <Chip className='join-chip' sx={{ p: 1, backgroundColor: colors.green[900], color: colors.green[500], fontWeight: 'bold' }} onClick={() => { setJoinClassDialogOpen(!joinClassDialogOpen) }} label='Join Class' icon={<span style={{ color: colors.green[500] }} slot='icon' className="material-symbols-outlined">group_add</span>}>
+                    </Chip>
                 </div>
             </div>
             <ClassList ref={classListRef} selectedClassCallback={selectedClassCallback} />

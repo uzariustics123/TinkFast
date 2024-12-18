@@ -35,3 +35,38 @@ export const getQuizScore = (questionResopnses) => {
     );
     return scores;
 }
+export const getQuizTotalPoints = (questions) => {
+    let totalPoints = 0;
+    // console.log('getQuizScore', questionResopnses);
+    questions.map(question => {
+        switch (question.type.toString()) {
+            case 'singleChoice':
+                totalPoints += question.points;
+                console.log('signle cr', question.points);
+                break;
+            case 'multiChoice':
+                totalPoints += question.points * question.choices.filter(choice => choice.isCorrect === true).length;
+                console.log('mulitchoice sc', question.points * question.choices.filter(choice => choice.isCorrect === true).length);
+
+                break;
+            case 'matchingType':
+                totalPoints += question.points * question.choices.length;
+                console.log('matching', question.points * question.choices.length);
+
+                break;
+            case 'essay':
+                totalPoints += question.points;
+                console.log('ess sr', question.points);
+
+                break;
+            default:
+                console.log('question type not supported', question.type);
+                break;
+        }
+    }
+    );
+    return totalPoints;
+
+
+    return totalPoints;
+}

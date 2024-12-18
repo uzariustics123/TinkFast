@@ -1,8 +1,10 @@
 import React, { useContext, useEffect, useReducer, useState } from 'react'
 import { collection, doc, getDocs, query, where } from 'firebase/firestore'
 import { db } from './Firebase';
-import { DataGrid } from '@mui/x-data-grid';
+import { DataGrid, GRID_STRING_COL_DEF } from '@mui/x-data-grid';
 import { AppContext, ClassContext } from '../AppContext';
+import { renderProgress } from './progress';
+import { SparkLineChart } from '@mui/x-charts';
 const ClassRemarks = () => {
     const { openedClass } = useContext(ClassContext);
     const [acts, setActs] = useReducer((currentQuizes, action) => {
@@ -118,6 +120,32 @@ const ClassRemarks = () => {
         // console.log('teachers', participantsUIDs);
 
     };
+    function GridSparklineCell(props) {
+        if (props.value == null) {
+            return null;
+        }
+
+        return (
+            <SparkLineChart
+                data={props.value}
+                width={props.colDef.computedWidth}
+                plotType={props.plotType}
+                showTooltip={true}
+                colors={['red', 'yellow', 'green']}
+            />
+        );
+    }
+    const sparklineColumnType = {
+        ...GRID_STRING_COL_DEF,
+        type: 'custom',
+        resizable: false,
+        filterable: false,
+        sortable: false,
+        editable: false,
+        groupable: false,
+        display: 'flex',
+        renderCell: (params) => <GridSparklineCell {...params} />,
+    };
     const xcolumns = [
         { field: 'studentID', headerName: 'ID number', width: 100 },
         { field: 'name', headerName: 'Name', width: 200 },
@@ -125,24 +153,46 @@ const ClassRemarks = () => {
             field: quiz.id.toString(),
             headerName: (quiz.category == 'quiz' ? 'Quiz ' : quiz.category == 'performance task' ? 'PT ' : quiz.category == 'exam' ? 'Exam ' : '') + (index + 1),
             width: quiz.category == 'performance task' ? 200 : 100,
-            editable: true,
+            editable: false,
             description: quiz.title + ' - ' + quiz.description,
         })),
-        { field: 'performance', headerName: 'Performance', width: 200 },
+        {
+            field: 'grade',
+            headerName: 'Grade',
+            renderCell: renderProgress,
+            width: 200,
+            type: 'number',
+            editable: false,
+        },
+        {
+            field: 'performance',
+            headerName: 'Performance Chart',
+            ...sparklineColumnType,
+            width: 200,
+            editable: false,
+        },
     ];
     const xgetGridRows = () => {
         let griddata = rows.map((row) => {
+            let gainedScore = 0;
+            let totalScore = 0;
             const rowData = {
                 id: row.uid,
                 studentID: row.studentID,
                 name: `${row.firstname} ${row.lastname}`,
+                performance: [],
+                grade: 0,
             };
 
             [...acts.quizes, ...acts.pt, ...acts.exams].forEach((quiz) => {
                 const response = responses.find(item => item.uid === row.uid && item.quizId === quiz.id);
-                rowData[quiz.id] = response ? response.score : '--';
+                rowData[quiz.id] = response ? response.score + ' / ' + response.totalScore : '- -';
+                gainedScore += response ? response.score : 0;
+                totalScore += response ? response.totalScore : 0;
+                rowData.performance.push(response ? Math.round((response.score / response.totalScore) * 100) : 0);
             });
-
+            rowData.grade = Math.round((gainedScore / totalScore) * 100);
+            // rowData.performance = gainedScor e;
             return rowData;
         });
         return griddata;
@@ -185,6 +235,13 @@ const ClassRemarks = () => {
                 },
             ],
         },
+        {
+            groupId: 'Rating',
+            children: [
+                { field: 'grade' },
+                { field: 'performance' },
+            ]
+        },
     ];
 
 
@@ -213,6 +270,7 @@ const ClassRemarks = () => {
                 // checkboxSelection
                 disableSelectionOnClick
                 disableColumnSelector
+                // rowHeight={25}
                 columnGroupingModel={xcolumnGroupingModel}
             />
         </>

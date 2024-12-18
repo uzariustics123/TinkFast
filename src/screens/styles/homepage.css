@@ -46,4 +46,18 @@
         clear: both;
         display: table;
     }
+
+    .join-chip:hover {
+        background-color: var(--green-100);
+        color: var(--green-900);
+
+        .MuiChip-icon {
+            color: var(--green-900) !important;
+        }
+    }
+
+    @media only screen and (max-width: 700px) {
+
+        flex-direction: column;
+    }
 }

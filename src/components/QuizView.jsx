@@ -18,7 +18,7 @@ import Essay from './QuizTypes/Essay';
 import MultiChoice from './QuizTypes/MultiChoice';
 import SingleChoice from './QuizTypes/SingleChoice';
 import MatchingType from './QuizTypes/MatchingType';
-import { getQuizScore } from '../Utils';
+import { getQuizScore, getQuizTotalPoints } from '../Utils';
 
 const Transition = forwardRef(function Transition(props, ref) {
     return <Slide direction="up" ref={ref} {...props} />;
@@ -127,7 +127,7 @@ export const QuizView = () => {
                 type: 'setQuestions',
                 questions: questionlist
             });
-            console.log('questionslist', questionlist);
+            // console.log('questionslist', questionlist);
         } catch (error) {
             console.log(error);
         }
@@ -138,6 +138,7 @@ export const QuizView = () => {
         try {
             const finalData = { ...quizResponse };
             finalData.score = getQuizScore(finalData.questionResponse);
+            finalData.totalScore = getQuizTotalPoints(quizQuiestions);
             const saveResult = addDoc(responseRef, finalData);
             // console.log('finaldata', finalData);
             setSnackbarMsg('Your response has been saved');
@@ -145,9 +146,7 @@ export const QuizView = () => {
             setQuizOpenDialog(false);
 
         } catch (error) {
-            console.log(JSON.stringify(quizResponse));
-            console.log(quizResponse);
-
+            console.log('error', quizResponse);
             console.log(error);
             setSnackbarMsg(error.message);
             setSnackbarOpen(true);

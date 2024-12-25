@@ -25,4 +25,4 @@ dist-ssr
 .firebaserc
 firebase.json
 .firebase
-/src/components/Firebase.jsx
+# /src/components/Firebase.jsx

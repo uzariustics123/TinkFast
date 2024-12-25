@@ -154,9 +154,9 @@ function QuizesList() {
                 <Box sx={{ m: 2 }}>
                     <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
                         {quizes.map((item, index) => (
-                            <ListItem sx={{ borderRadius: '24px', cursor: 'pointer' }} button={true} key={item.id} onClick={() => { }} alignItems="flex-start"
+                            <ListItem sx={{ minHeight: '150px', borderRadius: '24px', cursor: 'pointer' }} button={true} key={item.id} onClick={() => { }} alignItems="flex-start"
                                 secondaryAction={openedClass.classRole == 'teacher' ?
-                                    <Stack spacing={1} direction={'row'}>
+                                    <Stack className='quiz-actions'>
                                         <Chip sx={{ alignSelf: 'center' }} size='small' label='View Responses' onClick={() => { }} variant='outlined' />
                                         <FormControl sx={{ minWidth: '100px' }} variant='standard' >
                                             <InputLabel id="demo-simple-select-label">Status</InputLabel>
@@ -204,7 +204,13 @@ function QuizesList() {
                                                 component="span"
                                                 variant="caption"
                                                 sx={{ color: 'text.seconday', display: 'inline' }}>
-                                                Starts at {dayjs(item.expectedStartDateTime).format('MMMM d, YYYY hh:mm a') + (item.expectedEndDateTime != '' ? dayjs(item.expectedEndDateTime).format('MMMM d, YYYY hh:mm a') : '')}
+                                                Starts at {dayjs(item.expectedStartDateTime).format('MMMM d, YYYY hh:mm a')}
+                                            </Typography> <br />
+                                            <Typography
+                                                component="span"
+                                                variant="caption"
+                                                sx={{ color: 'text.seconday', display: 'inline' }}>
+                                                {(item.expectedEndDateTime != '' ? 'to ' + dayjs(item.expectedEndDateTime).format('MMMM d, YYYY hh:mm a') : '')}
                                             </Typography>
                                         </>
                                     }

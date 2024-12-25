@@ -5,8 +5,10 @@ import { DataGrid, GRID_STRING_COL_DEF } from '@mui/x-data-grid';
 import { AppContext, ClassContext } from '../AppContext';
 import { renderProgress } from './progress';
 import { SparkLineChart } from '@mui/x-charts';
+import { Tab, Tabs } from '@mui/material';
 const ClassRemarks = () => {
     const { openedClass } = useContext(ClassContext);
+    const [curtab, setTab] = useState(0);
     const [acts, setActs] = useReducer((currentQuizes, action) => {
         console.log('called', action);
         const type = action.type;
@@ -260,8 +262,16 @@ const ClassRemarks = () => {
             return newRows
         })
     }
+    const handleTabChange = (event, newValue) => {
+        setTab(newValue);
+    };
     return (
         <>
+            <Tabs value={curtab} onChange={handleTabChange} centered>
+                <Tab label="Prelim" />
+                <Tab label="Midterm" />
+                <Tab label="Finals" />
+            </Tabs>
             <DataGrid
                 rows={xgetGridRows()}
                 columns={xcolumns}

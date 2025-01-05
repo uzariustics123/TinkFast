@@ -19,6 +19,7 @@ import MultiChoice from './QuizTypes/MultiChoice';
 import SingleChoice from './QuizTypes/SingleChoice';
 import MatchingType from './QuizTypes/MatchingType';
 import { getQuizScore, getQuizTotalPoints } from '../Utils';
+import { FileAttachment } from './QuizTypes/FileAttachment';
 
 const Transition = forwardRef(function Transition(props, ref) {
     return <Slide direction="up" ref={ref} {...props} />;
@@ -55,6 +56,9 @@ export const QuizView = () => {
                 responseData.questionResponse[question.id] = userResponse;
                 return responseData;
             case 'setEssayResponse':
+                responseData.questionResponse[question.id] = userResponse;
+                return responseData;
+            case 'setFileUpResponse':
                 responseData.questionResponse[question.id] = userResponse;
                 return responseData;
             case 'reset':
@@ -115,8 +119,8 @@ export const QuizView = () => {
         // const quizesRef = collection(classRef, 'quizes');
         // const quizDoc = doc(quizesRef, quizOpenData.id);
         const questionRefs = collection(db, 'questions');
-        const filteredQuery = query(questionRefs, where('quizId', '==', quizOpenData.id), where('classId', '==', openedClass.classId));
         try {
+            const filteredQuery = query(questionRefs, where('quizId', '==', quizOpenData.id), where('classId', '==', openedClass.classId));
             const querySnapshot = await getDocs(filteredQuery);
             querySnapshot.docs.forEach((item) => {
                 console.log(item.data());
@@ -272,6 +276,7 @@ export const QuizView = () => {
                                         <CardContent>
                                             asdf{swiperRef.current.activeIndex}
                                             {quiz.type == 'essay' && <Essay questionData={quiz} />}
+                                            {quiz.type == 'fileUpload' && <FileAttachment composeMode={false} questionData={quiz} />}
                                             {quiz.type == 'multiChoice' && <MultiChoice questionData={quiz} choices={quiz.choices} />}
                                             {quiz.type == 'singleChoice' && <SingleChoice questionData={quiz} choices={quiz.choices} />}
                                             {quiz.type == 'matchingType' && <MatchingType questionData={quiz} choices={quiz.choices} />}

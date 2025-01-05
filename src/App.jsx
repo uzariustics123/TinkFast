@@ -15,7 +15,8 @@ import { AppContext } from './AppContext.jsx';
 
 function App() {
   const [loading, setLoading] = useState(true);
-  const [currentUserData, setCurrentUserData] = useState(null);
+  const [drawerActiveItem, setDrawerActiveItem] = useState('Users');
+  const [currentUserData, setCurrentUserData] = useState({});
   const [currentUserInfo, setCurrentUserInfo] = useState(null);
   const [backdropOpen, setBackdropOpen] = useState(false);
   const [openSnackbar, setSnackbarOpen] = useState(false);
@@ -28,7 +29,18 @@ function App() {
   }, []);
   return (
     <>
-      <AppContext.Provider value={{ currentUserData, setCurrentUserData, backdropOpen, setBackdropOpen, openSnackbar, setSnackbarOpen, snackbarMsg, setSnackbarMsg }}>
+      <AppContext.Provider value={{
+        currentUserData,
+        setCurrentUserData,
+        backdropOpen,
+        setBackdropOpen,
+        openSnackbar,
+        setSnackbarOpen,
+        snackbarMsg,
+        setSnackbarMsg,
+        drawerActiveItem,
+        setDrawerActiveItem,
+      }}>
 
         <ReactNotifications />
         <Suspense fallback={<PreLoader />}>

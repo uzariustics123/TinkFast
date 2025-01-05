@@ -7,7 +7,7 @@ import { auth, db } from '../components/Firebase';
 import { collection, addDoc, query, getDoc, getDocs, where, doc, updateDoc } from "firebase/firestore"
 import { QuizContext, ClassContext, AppContext, QuizResponseContext } from '../AppContext';
 import AddQuizDialog from './AddQuizDialog';
-import { Avatar, Box, Chip, Divider, FormControl, IconButton, InputLabel, List, ListItem, ListItemAvatar, ListItemIcon, ListItemText, MenuItem, Select, Stack, Typography } from '@mui/material';
+import { Avatar, Badge, Box, Chip, colors, Divider, FormControl, IconButton, InputLabel, List, ListItem, ListItemAvatar, ListItemIcon, ListItemText, MenuItem, Select, Stack, Typography } from '@mui/material';
 import dayjs from 'dayjs';
 import { QuizView } from './QuizView';
 
@@ -178,7 +178,7 @@ function QuizesList() {
                                     </Stack>
                                     :
                                     openedClass.classRole == 'student' ?
-                                        <Chip label='Start Quiz' onClick={(e) => startQuiz(item)} variant='outlined' /> : <></>
+                                        <Chip label='Start Quiz' disabled={dayjs() < dayjs(item.expectedStartDateTime) || (item.expectedEndDateTime != '' && dayjs() > dayjs(item.expectedEndDateTime))} onClick={(e) => startQuiz(item)} variant='outlined' /> : <></>
                                 }>
                                 {item.status == 'draft' ?
                                     <ListItemAvatar>
@@ -195,7 +195,8 @@ function QuizesList() {
                                             component="span"
                                             variant="body2"
                                             sx={{ color: 'text.primary', display: 'inline' }}>
-                                            {item.title}
+                                            {item.title}&nbsp;
+                                            {(item.expectedEndDateTime != '' && dayjs() > dayjs(item.expectedEndDateTime)) && <Chip color='error' sx={{ fontSize: '11px' }} size='small' label='Ended' variant='outlined' />}
                                         </Typography>}
                                     secondary={
                                         <>

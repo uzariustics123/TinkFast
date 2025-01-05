@@ -286,12 +286,16 @@ const ClassList = forwardRef((props, ref) => {
                                                     <md-assist-chip onClick={() => handleChipClick(item, "view")} label='Open'>
                                                         <md-icon slot="icon">open_run</md-icon>
                                                     </md-assist-chip>
-                                                    <md-assist-chip onClick={() => handleChipClick(item, "edit")} label="Edit">
-                                                        <md-icon slot="icon">edit</md-icon>
-                                                    </md-assist-chip>
-                                                    <md-assist-chip class="trash-class" onClick={() => handleChipClick(item, "delete")} label="Delete">
-                                                        <md-icon slot="icon">delete</md-icon>
-                                                    </md-assist-chip>
+                                                    {item.classRole == 'teacher' &&
+                                                        <>
+                                                            <md-assist-chip onClick={() => handleChipClick(item, "edit")} label="Edit">
+                                                                <md-icon slot="icon">edit</md-icon>
+                                                            </md-assist-chip>
+                                                            <md-assist-chip class="trash-class" onClick={() => handleChipClick(item, "delete")} label="Delete">
+                                                                <md-icon slot="icon">delete</md-icon>
+                                                            </md-assist-chip>
+                                                        </>
+                                                    }
                                                 </md-chip-set>
 
                                         }

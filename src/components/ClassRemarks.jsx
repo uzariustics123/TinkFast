@@ -6,9 +6,10 @@ import { AppContext, ClassContext } from '../AppContext';
 import { renderProgress } from './progress';
 import { SparkLineChart } from '@mui/x-charts';
 import { Tab, Tabs } from '@mui/material';
-const ClassRemarks = () => {
+const ClassRemarks = (props) => {
     const { openedClass } = useContext(ClassContext);
     const [curtab, setTab] = useState(0);
+    let periods = ['prelim', 'midterm', 'finals'];
     const [acts, setActs] = useReducer((currentQuizes, action) => {
         console.log('called', action);
         const type = action.type;
@@ -40,12 +41,16 @@ const ClassRemarks = () => {
     };
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [curtab]);
     const getQuizes = async () => {
         let quizesGot = [];
         try {
             const quizRef = collection(db, 'quizes');
-            const classQuery = query(quizRef, where('classId', '==', openedClass.id), where('status', '==', 'publish'));
+            const classQuery = query(quizRef,
+                where('classId', '==', openedClass.id),
+                where('status', '==', 'publish'),
+                where('period', '==', periods[curtab])
+            );
             const queryResult = await getDocs(classQuery);
             console.log('query result: ' + queryResult);
 
@@ -83,7 +88,7 @@ const ClassRemarks = () => {
         const participants = [];
 
         let participantsUIDs = [];
-        let participantsList = [];
+        // let participantsList = [];
         let participantsMembershipData = [];
         try {
             const filteredQuery = query(collection(db, 'classMembers'), where('classId', '==', openedClass.id),
@@ -175,9 +180,20 @@ const ClassRemarks = () => {
         },
     ];
     const xgetGridRows = () => {
+        const categoryWeights = {
+            performanceTask: 0.40,
+            exam: 0.30,
+            quiz: 0.30,
+        };
         let griddata = rows.map((row) => {
             let gainedScore = 0;
             let totalScore = 0;
+            let ptScore = 0;
+            let ptTotalScore = 0;
+            let examScore = 0;
+            let examTotalScore = 0;
+            let quizScore = 0;
+            let quizTotalScore = 0;
             const rowData = {
                 id: row.uid,
                 studentID: row.studentID,
@@ -186,14 +202,34 @@ const ClassRemarks = () => {
                 grade: 0,
             };
 
+
             [...acts.quizes, ...acts.pt, ...acts.exams].forEach((quiz) => {
                 const response = responses.find(item => item.uid === row.uid && item.quizId === quiz.id);
                 rowData[quiz.id] = response ? response.score + ' / ' + response.totalScore : '- -';
-                gainedScore += response ? response.score : 0;
-                totalScore += response ? response.totalScore : 0;
-                rowData.performance.push(response ? Math.round((response.score / response.totalScore) * 100) : 0);
+                if (response) {
+                    gainedScore += response ? response.score : 0;
+                    ptScore += quiz.category == 'performance task' ? response.score : 0;
+                    examScore += quiz.category == 'exam' ? response.score : 0;
+                    quizScore += quiz.category == 'quiz' ? response.score : 0;
+                    ptTotalScore += quiz.category == 'performance task' ? response.totalScore : 0;
+                    examTotalScore += quiz.category == 'exam' ? response.totalScore : 0;
+                    quizTotalScore += quiz.category == 'quiz' ? response.totalScore : 0;
+                    totalScore += response ? response.totalScore : 0;
+                    rowData.performance.push(response.score != 0 ? Math.round((response.score / response.totalScore) * 100) : 0);
+                }
             });
-            rowData.grade = Math.round((gainedScore / totalScore) * 100);
+            console.log('pt: ', ptScore, '/', ptTotalScore);
+            console.log('exam: ', examScore, '/', examTotalScore);
+            console.log('quiz:', quizScore, '/', quizTotalScore);
+            let ptGrade = (ptScore != 0 && ptTotalScore != 0) ? ((ptScore / ptTotalScore) * 100) * categoryWeights.performanceTask : 0;
+            let examGrade = (examScore != 0 && examTotalScore != 0) ? ((examScore / examTotalScore) * 100) * categoryWeights.exam : 0;
+            let quizGrade = (quizScore != 0 && quizTotalScore != 0) ? ((quizScore / quizTotalScore) * 100) * categoryWeights.quiz : 0;
+            console.log('pt grade:', ptGrade);
+            console.log('exam grade:', examGrade);
+            console.log('quiz grade:', quizGrade);
+
+
+            rowData.grade = Math.round(ptGrade + examGrade + quizGrade);
             // rowData.performance = gainedScor e;
             return rowData;
         });
@@ -264,6 +300,9 @@ const ClassRemarks = () => {
     }
     const handleTabChange = (event, newValue) => {
         setTab(newValue);
+        console.log('curtab: ', newValue);
+        fetchData();
+
     };
     return (
         <>

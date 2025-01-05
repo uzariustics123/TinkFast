@@ -48,7 +48,7 @@ function ClassView(props) {
                     <md-tabs class="class-tabs">
                         <md-primary-tab selected inline-icon onClick={() => handleTabChange(0)}>
                             <md-icon slot="icon">edit</md-icon>
-                            Quizes
+                            Activities
                         </md-primary-tab>
                         <md-primary-tab inline-icon onClick={() => handleTabChange(1)}>
                             <md-icon slot="icon">people</md-icon>

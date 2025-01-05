@@ -29,6 +29,7 @@ import SingleChoice from './QuizTypes/SingleChoice';
 import MatchingType from './QuizTypes/MatchingType';
 import { addDoc, collection, doc, writeBatch } from 'firebase/firestore';
 import { db } from './Firebase';
+import { FileAttachment } from './QuizTypes/FileAttachment';
 
 
 const Transition = forwardRef(function Transition(props, ref) {
@@ -110,7 +111,16 @@ function AddQuizDialog() {
                 points: 1,
                 id: (crypto.randomUUID())
             };
-        } else if (type == 'multiChoice') {
+        }
+        else if (type == 'fileUpload') {
+            newQuiz = {
+                question: '',
+                type: type,
+                points: 1,
+                id: (crypto.randomUUID())
+            };
+        }
+        else if (type == 'multiChoice') {
             newQuiz = {
                 question: '',
                 type: type,
@@ -121,7 +131,8 @@ function AddQuizDialog() {
                 ],
                 id: (crypto.randomUUID())
             };
-        } else if (type == 'singleChoice') {
+        }
+        else if (type == 'singleChoice') {
             newQuiz = {
                 question: '',
                 type: type,
@@ -183,6 +194,18 @@ function AddQuizDialog() {
                     label: 'Considerations',
                     description:
                         `An Essay type of question does not automatically rate your student's answer. You may need to review each of them and rate them manually to justify your student's answer.`,
+                },
+            ];
+        else if (Qtype == 'fileUpload')
+            steps = [
+                {
+                    label: 'Set description',
+                    description: `Setup file attachment by following these steps`,
+                },
+                {
+                    label: 'Specify points',
+                    description:
+                        `Please set score points when a student correctly selected each correct items`,
                 },
             ];
         else if (Qtype == 'multiChoice')
@@ -424,7 +447,7 @@ function AddQuizDialog() {
                                             <StepContent >
                                                 <Typography>{step.description}</Typography>
                                                 {(index == 0) && <>
-                                                    <TextField label="Enter question" sx={{ minWidth: '30rem' }}
+                                                    <TextField label="Enter question or instruction" sx={{ minWidth: '30rem' }}
                                                         multiline
                                                         onChange={questContentChange}
                                                         minRows={2}
@@ -434,7 +457,7 @@ function AddQuizDialog() {
                                                 </>
                                                 }
                                                 {/* Choice */}
-                                                {((index == 1 && Qtype == 'essay') ||
+                                                {((index == 1 && Qtype == 'essay') || (index == 1 && Qtype == 'fileUpload') ||
                                                     ((Qtype == 'singleChoice' || Qtype == 'multiChoice') && index == 3) ||
                                                     (Qtype == 'matchingType' && index == 2)
                                                 ) && <>
@@ -558,6 +581,7 @@ function AddQuizDialog() {
             { type: 'multiChoice', action: () => { }, label: 'Multi Choice' },
             { type: 'essay', action: () => { }, label: 'Essay' },
             { type: 'matchingType', action: () => { }, label: 'Matching Type' },
+            { type: 'fileUpload', action: () => { }, label: 'File attachment' },
         ]);
         const [selectedQuestionType, setSelectedQuizType] = useState('');
         const selectAction = (event) => {
@@ -619,6 +643,7 @@ function AddQuizDialog() {
                         </IconButton>
                     </div>
                     {item.type == 'essay' && <Essay questionData={item} />}
+                    {item.type == 'fileUpload' && <FileAttachment composeMode={true} questionData={item} />}
                     {item.type == 'multiChoice' && <MultiChoice questionData={item} choices={item.choices} />}
                     {item.type == 'singleChoice' && <SingleChoice questionData={item} choices={item.choices} />}
                     {item.type == 'matchingType' && <MatchingType questionData={item} choices={item.choices} />}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useLayoutEffect } from 'react'
+import React, { useEffect, useState, useLayoutEffect, useContext } from 'react'
 import './styles/sideDrawer.css';
 import '@material/web/all';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
@@ -7,12 +7,14 @@ import '@material/web/typography/md-typescale-styles.css';
 import { Divider } from 'ui-neumorphism';
 import { auth, db } from './Firebase';
 import { collection, getDoc, getDocs, query, where } from 'firebase/firestore';
+import { AppContext } from '../AppContext';
 // import routes from '../routes/index.js'
 // import { Card, withClickOutside, detectElementInDOM } from 'ui-neumorphism'
 
 
 
 function Sidebar({ onMenuItemClick, activeItem }) {
+    const { setDrawerActiveItem } = useContext(AppContext);
     const [currentItem, setItem] = useState('home');
     const [windowSize, setWindowSize] = useState([0, 0]);
     const [userData, setUserData] = useState(null);
@@ -96,11 +98,11 @@ function Sidebar({ onMenuItemClick, activeItem }) {
                         <span className="material-symbols-rounded">bar_chart_4_bars</span>
                         <span className="drawer-item-title">Dashboard</span>
                     </li>
-                    <li onClick={() => handleItemClick('todo')} className={'todo' == currentItem ? 'drawer-item active' : 'drawer-item'}>
+                    {/* <li onClick={() => handleItemClick('todo')} className={'todo' == currentItem ? 'drawer-item active' : 'drawer-item'}>
                         <md-ripple></md-ripple>
                         <span className="material-symbols-rounded"> checklist </span>
                         <span className="drawer-item-title">Todo's</span>
-                    </li>
+                    </li> */}
                     {/* <li onClick={() => handleItemClick('quizes')} className={'quizes' == currentItem ? 'drawer-item active' : 'drawer-item'}>
                         <md-ripple></md-ripple>
                         <span className="material-symbols-rounded">history_edu</span>

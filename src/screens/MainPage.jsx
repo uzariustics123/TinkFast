@@ -16,11 +16,14 @@ import { AppContext } from '../AppContext';
 import { collection, addDoc, query, where, getDoc, getDocs } from "firebase/firestore";
 import { Snackbar, CircularProgress, Backdrop, ThemeProvider, createTheme, colors } from '@mui/material';
 import { blue, green, lightGreen, lime, yellow } from '@mui/material/colors';
+import { Users } from '../components/AdminScreens/Users';
+import { AdminPanel } from '../components/AdminScreens/AdminPanel';
 // import '../material-icons.css';
 
 function MainPage() {
     let currentUser = null;
     let uid = null;
+    const [userData, setUserData] = useState({});
     const [classDocData, setClassDocData] = useState(null);
     const [openedClass, setOpenedClass] = useState(null);
     const { currentUserData, setCurrentUserData, backdropOpen, setBackdropOpen, openSnackbar, setSnackbarOpen, snackbarMsg, setSnackbarMsg } = useContext(AppContext);
@@ -67,23 +70,30 @@ function MainPage() {
     }
     useEffect(() => {
         // console.log('openedClass', openedClass);
-
+        setBackdropOpen(true);
         if (auth.currentUser !== null)
             getUserData();
     }, [auth.currentUser]);
     const getUserData = async () => {
+        if (auth.currentUser.email == 'admin@tinkfast.net') {
+            setCurrentUserData({ ...auth.currentUser });
+            setBackdropOpen(false);
+            console.log(auth.currentUser.email);
+            return;
+        }
+
         const currentUser = auth.currentUser;
         const filteredQuery = query(collection(db, 'users'), where('uid', '==', currentUser.uid));
         try {
             const querySnapshot = await getDocs(filteredQuery);
-            querySnapshot.forEach((doc) => {
-                setCurrentUserData({ currentUser, ...doc.data() });
-                // console.log();
-
-            });
+            const user = querySnapshot.docs.map((doc) => doc.data());
+            setCurrentUserData({ currentUser, ...user[0] });
+            setUserData({ currentUser, ...user[0] });
+            setBackdropOpen(false);
+            console.log('user ', user);
 
         } catch (error) {
-            // console.log('error getting user info', error);
+            console.log('error getting user info', error);
         }
     };
     const handleSnackbarClose = () => {
@@ -95,7 +105,7 @@ function MainPage() {
         palette: {
             primary: {
                 light: '#6fbf73',
-                main: '#4caf50',
+                main: colors.green[900],
                 dark: '#357a38',
                 contrastText: '#fff',
             },
@@ -132,6 +142,47 @@ function MainPage() {
             }
         },
     });
+    const adminTheme = createTheme({
+        palette: {
+            primary: {
+                light: '#6fbf73',
+                main: colors.green[900],
+                dark: '#357a38',
+                contrastText: '#fff',
+            },
+            secondary: { main: colors.green[900] },
+        },
+        components: {
+            // Name of the component
+            MuiPaper: {
+                styleOverrides: {
+                    // Name of the slot
+                    root: {
+                        // Some CSS
+                        borderRadius: '0',
+                    },
+                },
+            },
+            MuiStepIcon: {
+                styleOverrides: {
+                    // Name of the slot
+                    root: {
+                        // Some CSS
+                        color: blue,
+                    },
+                },
+            },
+            MuiButton: {
+                styleOverrides: {
+                    // Name of the slot
+                    root: {
+                        // Some CSS
+                        borderRadius: '25px',
+                    },
+                },
+            }
+        },
+    });
 
     return (
         <>
@@ -143,14 +194,19 @@ function MainPage() {
                     onClick={() => { }}>
                     <CircularProgress color="inherit" />
                 </Backdrop>
-                <ClassContext.Provider value={{ openedClass, setOpenedClass }}>
-                    <SideBar onMenuItemClick={handleCurrentDrawerMenuItem} activeItem={currentPage} />
-                    <div className="main-container">
-                        {currentPage === 'home' && <HomePage selectedClassCallback={openClassCallback} />}
-                        {currentPage === 'class' && <ClassView />}
-                        {/* {currentPage === 'home' ? <HomePage /> : <React.Fragment />} */}
-                    </div>
-                </ClassContext.Provider>
+                {
+                    (currentUserData.email == 'admin@tinkfast.net') ?
+                        <ThemeProvider theme={adminTheme}><AdminPanel /></ThemeProvider> :
+                        (currentUserData.email != null && currentUserData.email != 'admin@tinkfast.net') ? <ClassContext.Provider value={{ openedClass, setOpenedClass }}>
+                            <SideBar onMenuItemClick={handleCurrentDrawerMenuItem} activeItem={currentPage} />
+                            <div className="main-container">
+                                {currentPage === 'home' && <HomePage selectedClassCallback={openClassCallback} />}
+                                {currentPage === 'class' && <ClassView />}
+                                {/* {currentPage === 'home' ? <HomePage /> : <React.Fragment />} */}
+                            </div>
+                        </ClassContext.Provider> : <></>
+
+                }
                 <Snackbar
                     open={openSnackbar}
                     autoHideDuration={6000}

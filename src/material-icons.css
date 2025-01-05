@@ -44,8 +44,8 @@
 
 .material-symbols-outlined {
     font-variation-settings:
-        'FILL' 0,
-        'wght' 0,
+        'FILL' 1,
+        'wght' 400,
         'GRAD' 0,
-        'opsz' NaN
+        'opsz' 20
 }

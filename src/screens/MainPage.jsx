@@ -78,7 +78,7 @@ function MainPage() {
         if (auth.currentUser.email == 'admin@tinkfast.net') {
             setCurrentUserData({ ...auth.currentUser });
             setBackdropOpen(false);
-            console.log(auth.currentUser.email);
+            console.log('the user', auth.currentUser);
             return;
         }
 
@@ -90,7 +90,7 @@ function MainPage() {
             setCurrentUserData({ currentUser, ...user[0] });
             setUserData({ currentUser, ...user[0] });
             setBackdropOpen(false);
-            console.log('user ', user);
+            // console.log('user ', user);
 
         } catch (error) {
             console.log('error getting user info', error);

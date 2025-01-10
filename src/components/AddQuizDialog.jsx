@@ -790,14 +790,17 @@ function AddQuizDialog() {
                                 Create Quiz
                             </Typography>
                             <Tooltip title='Save'>
-                                <IconButton
-                                    disabled={quizData.title.trim() == '' || quizDraft.length <= 0}
-                                    edge="end"
-                                    color={'#000'}
-                                    onClick={saveQuizData}
-                                    aria-label="save">
-                                    <md-icon>save</md-icon>
-                                </IconButton>
+                                <span>
+                                    <IconButton
+                                        disabled={quizData.title.trim() == '' || quizDraft.length <= 0}
+                                        edge="end"
+                                        color={'#000'}
+                                        onClick={saveQuizData}
+                                        aria-label="save">
+                                        <md-icon>save</md-icon>
+                                    </IconButton>
+
+                                </span>
                             </Tooltip>
                         </Toolbar>
                     </AppBar>

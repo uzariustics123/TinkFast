@@ -5,10 +5,12 @@ import { DataGrid, GRID_STRING_COL_DEF } from '@mui/x-data-grid';
 import { AppContext, ClassContext } from '../AppContext';
 import { renderProgress } from './progress';
 import { SparkLineChart } from '@mui/x-charts';
-import { Tab, Tabs } from '@mui/material';
+import { Box, Chip, IconButton, Tab, Tabs } from '@mui/material';
 const ClassRemarks = (props) => {
     const { openedClass } = useContext(ClassContext);
+    const {currentUserData} = useContext(AppContext);
     const [curtab, setTab] = useState(0);
+    let sheet = [];
     let periods = ['prelim', 'midterm', 'finals'];
     const [acts, setActs] = useReducer((currentQuizes, action) => {
         console.log('called', action);
@@ -86,7 +88,6 @@ const ClassRemarks = (props) => {
     const getClassStudents = async () => {
         console.log('getting students');
         const participants = [];
-
         let participantsUIDs = [];
         // let participantsList = [];
         let participantsMembershipData = [];
@@ -102,7 +103,7 @@ const ClassRemarks = (props) => {
                     participantsMembershipData.push({ membershipDoc: doc.id, ...doc.data() });
                 else {
                 }
-                console.log('class role: ' + doc.data().classRole);
+                // console.log('class role: ' + doc.data().classRole);
             });
             let startingItem = 0;
             const getUserData = async () => {
@@ -112,7 +113,12 @@ const ClassRemarks = (props) => {
                     const queryResult = await getDocs(userQuery);
                     queryResult.forEach((doc) => {
                         let foundMembershipData = participantsMembershipData.find(foundItem => foundItem.uid === doc.data().uid);
-                        participants.push({ userDoc: doc.id, ...doc.data(), ...foundMembershipData });
+                        if( openedClass.classRole == 'student' && foundMembershipData.uid == currentUserData.uid) {
+                            
+                            participants.push({ userDoc: doc.id, ...doc.data(), ...foundMembershipData });
+                        }else if( openedClass.classRole == 'teacher'){
+                            participants.push({ userDoc: doc.id, ...doc.data(), ...foundMembershipData });
+                        }
                     });
                 } catch (error) {
                     console.log('error getting users ', error);
@@ -122,10 +128,8 @@ const ClassRemarks = (props) => {
         } catch (error) {
             console.log('1error getting users ', error);
         }
-
         setRows(participants);
         // console.log('teachers', participantsUIDs);
-
     };
     function GridSparklineCell(props) {
         if (props.value == null) {
@@ -153,32 +157,41 @@ const ClassRemarks = (props) => {
         display: 'flex',
         renderCell: (params) => <GridSparklineCell {...params} />,
     };
-    const xcolumns = [
-        { field: 'studentID', headerName: 'ID number', width: 100 },
-        { field: 'name', headerName: 'Name', width: 200 },
-        ...[...acts.quizes, ...acts.pt, ...acts.exams].map((quiz, index) => ({
-            field: quiz.id.toString(),
-            headerName: (quiz.category == 'quiz' ? 'Quiz ' : quiz.category == 'performance task' ? 'PT ' : quiz.category == 'exam' ? 'Exam ' : '') + (index + 1),
-            width: quiz.category == 'performance task' ? 200 : 100,
-            editable: false,
-            description: quiz.title + ' - ' + quiz.description,
-        })),
-        {
-            field: 'grade',
-            headerName: 'Grade',
-            renderCell: renderProgress,
-            width: 200,
-            type: 'number',
-            editable: false,
-        },
-        {
-            field: 'performance',
-            headerName: 'Performance Chart',
-            ...sparklineColumnType,
-            width: 200,
-            editable: false,
-        },
-    ];
+    const xcolumns = () => {
+        const xgridColumn = [
+            { field: 'studentID', headerName: 'ID number', width: 100 },
+            { field: 'name', headerName: 'Name', width: 200 },
+            ...[...acts.quizes, ...acts.pt, ...acts.exams].map((quiz, index) => ({
+                field: quiz.id.toString(),
+                headerName: (quiz.category == 'quiz' ? 'Quiz ' : quiz.category == 'performance task' ? 'PT ' : quiz.category == 'exam' ? 'Exam ' : '') + (index + 1),
+                width: quiz.category == 'performance task' ? 200 : 100,
+                editable: false,
+                description: quiz.title + ' - ' + quiz.description,
+            })),
+        ];
+        if (openedClass.classRole == 'teacher'){
+            xgridColumn.push(
+                {
+                    field: 'grade',
+                    headerName: 'Grade',
+                    renderCell: renderProgress,
+                    width: 200,
+                    type: 'number',
+                    editable: false,
+                },
+            );
+        }
+        xgridColumn.push(
+            {
+                field: 'performance',
+                headerName: 'Performance Chart',
+                ...sparklineColumnType,
+                width: 200,
+                editable: false,
+            }
+        )
+        return xgridColumn;
+    };
     const xgetGridRows = () => {
         const categoryWeights = {
             performanceTask: 0.40,
@@ -186,6 +199,7 @@ const ClassRemarks = (props) => {
             quiz: 0.30,
         };
         let griddata = rows.map((row) => {
+            let rowSheet = {};
             let gainedScore = 0;
             let totalScore = 0;
             let ptScore = 0;
@@ -230,8 +244,12 @@ const ClassRemarks = (props) => {
 
 
             rowData.grade = Math.round(ptGrade + examGrade + quizGrade);
+            rowSheet['Student ID'] = row.studentID;
+            rowSheet['Student ID'] = row.studentID;
             // rowData.performance = gainedScor e;
             return rowData;
+            
+       
         });
         return griddata;
     };
@@ -304,6 +322,9 @@ const ClassRemarks = (props) => {
         fetchData();
 
     };
+    const handleExport = () => {
+        const wb = '';
+    }
     return (
         <>
             <Tabs value={curtab} onChange={handleTabChange} centered>
@@ -311,9 +332,27 @@ const ClassRemarks = (props) => {
                 <Tab label="Midterm" />
                 <Tab label="Finals" />
             </Tabs>
+            <Box sx={{ width: '100%', alignContent: 'end' }}>
+                {/* <IconButton
+                    edge="end"
+                    color={'#000'}
+                    onClick={() => { }}
+                    aria-label="close">
+                    <span className="material-symbols-rounded">download</span>
+                </IconButton> */}
+                <Chip
+                    sx={{ float: 'right', m: 1 }}
+                    size='small'
+                    label="Export Excel file"
+                    onClick={() => { }}
+                    // onDelete={() => { }}
+                    icon={<span className="material-symbols-rounded">download</span>}
+                    variant="outlined"
+                />
+            </Box>
             <DataGrid
                 rows={xgetGridRows()}
-                columns={xcolumns}
+                columns={xcolumns()}
                 pageSize={5}
                 rowsPerPageOptions={[5]}
                 // checkboxSelection

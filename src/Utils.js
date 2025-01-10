@@ -66,7 +66,40 @@ export const getQuizTotalPoints = (questions) => {
     }
     );
     return totalPoints;
+}
+export const calculatePoints = (responses) => {
+    let totalPoints = 0;
+    Object.values(responses).forEach(response => {
+        totalPoints += response.points;
+    });
+    return totalPoints;
+}
+export const calculateQuestionTotalPoints = (question) => {
+    let totalPoints = 0;
+    // console.log('getQuizScore', questionResopnses);
+    switch (question.type.toString()) {
+        case 'singleChoice':
+            totalPoints += question.points;
+            console.log('signle cr', question.points);
+            break;
+        case 'multiChoice':
+            totalPoints += question.points * question.choices.filter(choice => choice.isCorrect === true).length;
+            console.log('mulitchoice sc', question.points * question.choices.filter(choice => choice.isCorrect === true).length);
 
+            break;
+        case 'matchingType':
+            totalPoints += question.points * question.choices.length;
+            console.log('matching', question.points * question.choices.length);
 
+            break;
+        case 'essay':
+            totalPoints += question.points;
+            console.log('ess sr', question.points);
+
+            break;
+        default:
+            console.log('question type not supported', question.type);
+            break;
+    }
     return totalPoints;
 }

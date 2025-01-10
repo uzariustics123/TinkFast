@@ -8,6 +8,7 @@ import { Store } from 'react-notifications-component';
 import ClassList from '../components/ClassList';
 import { Button, Snackbar, Dialog, DialogContent, DialogActions, DialogContentText, DialogTitle, TextField, Chip, colors } from "@mui/material";
 import { AppContext, ClassContext } from '../AppContext';
+import { sendEmailVerification } from 'firebase/auth';
 
 function HomePage({ selectedClassCallback }) {
     const currentUser = auth.currentUser;
@@ -25,7 +26,7 @@ function HomePage({ selectedClassCallback }) {
     const classMemberDBRef = collection(db, "classMembers");
 
     useEffect(() => {
-        // console.log('currentUserData', currentUserData);
+        console.log('currentUserData', currentUserData.currentUser);
 
         const classTitleTF = classTitleRef.current;
         const classDescTF = classTitleRef.current;
@@ -49,6 +50,24 @@ function HomePage({ selectedClassCallback }) {
                 classDescTF.removeEventListener('input', classDescChangeEvent);
         };
     }, []);
+
+    const sendVerificationEmail = () => {
+        const user = auth.currentUser;
+        setBackdropOpen(true);
+        if (user) {
+            sendEmailVerification(user)
+                .then(() => {
+                    console.log("Verification email sent!");
+                    alert("A verification email has been sent to your email address.");
+                })
+                .catch((error) => {
+                    console.error("Error sending email verification:", error);
+                });
+        } else {
+            console.log("No user is signed in.");
+        }
+        setBackdropOpen(false);
+    };
 
     // class creation
     const createNewClass = async () => {
@@ -222,13 +241,25 @@ function HomePage({ selectedClassCallback }) {
 
             <div className="home-banner">
                 <h1 className='banner-greet'>TinkFast </h1>
-                <p className='banner-msg'>Join a class, start a quiz or engage with others by sharing your thoughts. Join the fun of learning!</p>
+                <p className='banner-msg'>
+                    {(currentUserData.currentUser.emailVerified || false) ? 'Join a class, start a quiz or engage with others by sharing your thoughts. Join the fun of learning!' : 'Verify email your address to start creating or joining a class'}
+                </p>
                 <Player className='home-anim' autoplay loop src="/anims/home-anim.json" />
                 <div className="banner-actions">
-                    <Chip sx={{ borderColor: colors.green[900], color: colors.green[800], fontWeight: 'bold' }} variant='outlined' onClick={createClassPrompt} icon={<span slot='icon' className="material-symbols-outlined">add</span>} label='Create Class'>
-                    </Chip>
-                    <Chip className='join-chip' sx={{ p: 1, backgroundColor: colors.green[900], color: colors.green[500], fontWeight: 'bold' }} onClick={() => { setJoinClassDialogOpen(!joinClassDialogOpen) }} label='Join Class' icon={<span style={{ color: colors.green[500] }} slot='icon' className="material-symbols-outlined">group_add</span>}>
-                    </Chip>
+                    {currentUserData.currentUser.emailVerified ?
+                        <>
+                            <Chip sx={{ borderColor: colors.green[900], color: colors.green[800], fontWeight: 'bold' }} variant='outlined' onClick={createClassPrompt} icon={<span slot='icon' className="material-symbols-outlined">add</span>} label='Create Class'>
+                            </Chip>
+                            <Chip className='join-chip' sx={{ p: 1, backgroundColor: colors.green[900], color: colors.green[500], fontWeight: 'bold' }} onClick={() => { setJoinClassDialogOpen(!joinClassDialogOpen) }} label='Join Class' icon={<span style={{ color: colors.green[500] }} slot='icon' className="material-symbols-outlined">group_add</span>}>
+                            </Chip>
+                        </>
+                        :
+                        <>
+                            <Chip className='join-chip' sx={{ p: 1, backgroundColor: colors.green[900], color: colors.green.A100, fontWeight: 'bold' }} onClick={() => { sendVerificationEmail() }} label='Verify my email address' icon={<span style={{ color: colors.green[500] }} slot='icon' className="material-symbols-outlined">email</span>}>
+                            </Chip>
+                        </>
+                    }
+
                 </div>
             </div>
             <ClassList ref={classListRef} selectedClassCallback={selectedClassCallback} />

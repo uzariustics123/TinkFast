@@ -57,7 +57,9 @@ export const getQuizTotalPoints = (questions) => {
             case 'essay':
                 totalPoints += question.points;
                 console.log('ess sr', question.points);
-
+                break;
+            case 'fileUpload':
+                totalPoints += question.points;
                 break;
             default:
                 console.log('question type not supported', question.type);
@@ -96,6 +98,9 @@ export const calculateQuestionTotalPoints = (question) => {
             totalPoints += question.points;
             console.log('ess sr', question.points);
 
+            break;
+        case 'fileUpload':
+            totalPoints += question.points;
             break;
         default:
             console.log('question type not supported', question.type);

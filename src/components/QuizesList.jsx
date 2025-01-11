@@ -15,6 +15,7 @@ import { ActivityReviewDialog } from './ActivityReviewDialog';
 
 function QuizesList() {
     const [userId, setUserId] = useState('');
+    const period = useRef('prelim');
     const { openedClass } = useContext(ClassContext);
     const { setSnackbarOpen, setSnackbarMsg, currentUserData } = useContext(AppContext);
     const [openDialog, setDialogOpen] = useState(false);
@@ -48,13 +49,13 @@ function QuizesList() {
             return [];
     }, []);
     useEffect(() => {
-        getPrelimQuizes();
+        getActivities();
         getMyActivityResopnses();
-    }, []);
-    const getPrelimQuizes = async () => {
+    }, [quizOpenData]);
+    const getActivities = async () => {
         const classRef = doc(db, 'classes', openedClass.classId);
         const quizRef = collection(db, 'quizes');
-        const filteredQuery = query(quizRef, where('period', '==', 'prelim'), where('classId', '==', openedClass.classId));
+        const filteredQuery = query(quizRef, where('period', '==', period.current), where('classId', '==', openedClass.classId));
         try {
             const querySnapshot = await getDocs(filteredQuery);
             const quizList = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
@@ -67,45 +68,46 @@ function QuizesList() {
             console.log(error);
         }
     }
-    const getMidtermQuizes = async () => {
-        const classRef = doc(db, 'classes', openedClass.classId);
-        const quizRef = collection(db, 'quizes');
-        const filteredQuery = query(quizRef, where('period', '==', 'midterm'), where('classId', '==', openedClass.classId));
-        try {
-            const querySnapshot = await getDocs(filteredQuery);
-            const quizList = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-            dispathQuizes({
-                type: 'setQuizes',
-                data: quizList
-            });
-            // console.log('quiz list', quizList);
-        } catch (error) {
-            console.log(error);
-        }
-    }
-    const getFinalsQuizes = async () => {
-        const classRef = doc(db, 'classes', openedClass.classId);
-        const quizRef = collection(db, 'quizes');
-        const filteredQuery = query(quizRef, where('period', '==', 'final'), where('classId', '==', openedClass.classId));
-        try {
-            const querySnapshot = await getDocs(filteredQuery);
-            const quizList = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-            dispathQuizes({
-                type: 'setQuizes',
-                data: quizList
-            });
-            // console.log('quiz list', quizList);
-        } catch (error) {
-            console.log(error);
-        }
-    }
+    // const getMidtermQuizes = async () => {
+    //     const classRef = doc(db, 'classes', openedClass.classId);
+    //     const quizRef = collection(db, 'quizes');
+    //     const filteredQuery = query(quizRef, where('period', '==', 'midterm'), where('classId', '==', openedClass.classId));
+    //     try {
+    //         const querySnapshot = await getDocs(filteredQuery);
+    //         const quizList = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+    //         dispathQuizes({
+    //             type: 'setQuizes',
+    //             data: quizList
+    //         });
+    //         // console.log('quiz list', quizList);
+    //     } catch (error) {
+    //         console.log(error);
+    //     }
+    // }
+    // const getFinalsQuizes = async () => {
+    //     const classRef = doc(db, 'classes', openedClass.classId);
+    //     const quizRef = collection(db, 'quizes');
+    //     const filteredQuery = query(quizRef, where('period', '==', 'final'), where('classId', '==', openedClass.classId));
+    //     try {
+    //         const querySnapshot = await getDocs(filteredQuery);
+    //         const quizList = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+    //         dispathQuizes({
+    //             type: 'setQuizes',
+    //             data: quizList
+    //         });
+    //         // console.log('quiz list', quizList);
+    //     } catch (error) {
+    //         console.log(error);
+    //     }
+    // }
     const handleTabChange = (index) => {
         if (index == 0)
-            getPrelimQuizes();
+            period.current = 'prelim';
         else if (index == 1)
-            getMidtermQuizes();
+            period.current = 'midterm';
         else if (index == 2)
-            getFinalsQuizes();
+            period.current = 'final';
+        getActivities();
         getMyActivityResopnses();
     }
     const onQuizStatusChange = async (e, item) => {

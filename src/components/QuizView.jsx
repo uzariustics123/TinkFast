@@ -156,6 +156,7 @@ export const QuizView = () => {
             setSnackbarOpen(true);
         }
         setBackdropOpen(false);
+        setQuizOpenData({});
     }
     const SlideNextButton = (props) => {
         const newprop = { ...props };
@@ -274,7 +275,7 @@ export const QuizView = () => {
                                 return (<SwiperSlide key={quiz.id}>
                                     <Card className="swiper-no-swiping" variant="outlined">
                                         <CardContent>
-                                            asdf{swiperRef.current.activeIndex}
+                                            
                                             {quiz.type == 'essay' && <Essay questionData={quiz} />}
                                             {quiz.type == 'fileUpload' && <FileAttachment composeMode={false} questionData={quiz} />}
                                             {quiz.type == 'multiChoice' && <MultiChoice questionData={quiz} choices={quiz.choices} />}

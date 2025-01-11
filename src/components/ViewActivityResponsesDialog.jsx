@@ -8,7 +8,7 @@ const xTransition = forwardRef(function Transition(props, ref) {
     return <Slide direction="up" ref={ref} {...props} />;
 });
 export const ViewActivityResponsesDialog = () => {
-    const { activityResponsesDialog, setActivityResponsesDialogOpen, activityItemToViewResponses, setOpenReviewActivityDialog, setActivityToReview, userId, setUserId } = useContext(QuizContext);
+    const { activityResponsesDialog, setActivityResponsesDialogOpen, activityItemToViewResponses,activityToReview, setOpenReviewActivityDialog, setActivityToReview, userId, setUserId } = useContext(QuizContext);
     const { openedClass } = useContext(ClassContext);
     const [participantes, setParticipantes] = useState([{}]);
     const [responses, setResponses] = useState([]);
@@ -118,7 +118,7 @@ export const ViewActivityResponsesDialog = () => {
                             const scorePercentage = response.score != 0 ? (response.score / response.totalScore) * 100 : 0;
                             let performanceIndicatorText = '';
                             if ((scorePercentage >= 75 && scorePercentage < 85)) {
-                                performanceIndicatorText = 'underperforming';
+                                performanceIndicatorText = 'developing';
                                 performanceIndicatorStyles.color = colors.red[600];
                                 performanceIndicatorStyles.border = '1px solid ' + colors.red[600];
                             }
@@ -146,7 +146,7 @@ export const ViewActivityResponsesDialog = () => {
                                             : <></>
                                         }>
                                         <ListItemAvatar>
-                                            <Avatar src={userFound ? userFound.imgUrl : ''}>
+                                            <Avatar src={userFound?.imgUrl ?? ''}>
                                                 <span className='material-symbols-rounded'>other_admission</span>
                                             </Avatar>
                                         </ListItemAvatar>
@@ -156,7 +156,7 @@ export const ViewActivityResponsesDialog = () => {
                                                     component="span"
                                                     variant="body2"
                                                     sx={{ color: 'text.primary', display: 'inline' }}>
-                                                    {`${userFound ? userFound.firstname : ''} ${userFound ? userFound.lastname : ''}`}
+                                                    {`${ userFound?.firstname ?? ''} ${userFound?.lastname ?? ''}`}
                                                 </Typography>}
                                             secondary={
                                                 <>

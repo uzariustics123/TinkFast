@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useReducer, useState } from 'react'
+import React, { useCallback, useContext, useEffect, useReducer, useState } from 'react'
 import { collection, doc, getDocs, query, where } from 'firebase/firestore'
 import { db } from './Firebase';
 import { DataGrid, GRID_STRING_COL_DEF } from '@mui/x-data-grid';
@@ -6,11 +6,13 @@ import { AppContext, ClassContext } from '../AppContext';
 import { renderProgress } from './progress';
 import { SparkLineChart } from '@mui/x-charts';
 import { Box, Chip, IconButton, Tab, Tabs } from '@mui/material';
+const ExcelJS = require('exceljs');
+// import XLSX from 'xlsx';
+// import * as XLSX from "xlsx";
 const ClassRemarks = (props) => {
     const { openedClass } = useContext(ClassContext);
     const {currentUserData} = useContext(AppContext);
     const [curtab, setTab] = useState(0);
-    let sheet = [];
     let periods = ['prelim', 'midterm', 'finals'];
     const [acts, setActs] = useReducer((currentQuizes, action) => {
         console.log('called', action);
@@ -245,7 +247,6 @@ const ClassRemarks = (props) => {
 
             rowData.grade = Math.round(ptGrade + examGrade + quizGrade);
             rowSheet['Student ID'] = row.studentID;
-            rowSheet['Student ID'] = row.studentID;
             // rowData.performance = gainedScor e;
             return rowData;
             
@@ -323,8 +324,86 @@ const ClassRemarks = (props) => {
 
     };
     const handleExport = () => {
-        const wb = '';
-    }
+        const workbook = new ExcelJS.Workbook();
+        workbook.creator = 'Tinkfast';
+        // workbook.lastModifiedBy = 'Tinkfast';
+        // workbook.created = new Date();
+        // workbook.modified = new Date();
+        // workbook.lastPrinted = new Date();
+        // workbook.properties.date1904 = true;
+        const sheet = workbook.addWorksheet('PerformanceReport');
+        sheet.mergeCells('A1', 'B2');
+        sheet.addRow(['Student Information', 'Activities', 'Rating'])
+        // sheet.spliceRows(1, 0, ['Student Information', 'Activities', 'Rating']);
+        const headerColms = [
+            {header: 'Student Information', key: 'studentInformation', width: 30},
+            {header: 'Activities', key: 'activities', width: 30},
+            {header: 'Rating', key: 'rating', width: 30},
+        ]
+        console.log('xcolumn', xcolumns());
+        
+        const dataColumn =
+            xcolumns().map((xcolumn) => {
+                let colm = {
+                    header: xcolumn.headerName,
+                    key: xcolumn.field,
+                    width: 10,
+                };
+                if (colm.key == 'performance') {
+                    colm.header = 'Performance';
+                }
+                return colm.header;
+            });
+        
+        // sheet.columns = dataColumn;
+        sheet.addRow(dataColumn);
+        console.log('dataColumn',dataColumn);
+        
+        
+            xgetGridRows().map((rowData) => {
+                let row = [];
+                xcolumns().map(xcolumn => {
+                    console.log('xcolumn', xcolumn.field);
+                    console.log(xcolumn.field, rowData[xcolumn.field]);
+                    
+                    let val = rowData[xcolumn.field];
+                    if (xcolumn.field == 'performance') {
+                        let perf = '';
+                        if ((rowData.grade >= 75 && rowData.grade < 85)) {
+                            perf = 'Developing'
+                        }
+                        else if (rowData.grade >= 85 && rowData.grade <= 89) {
+                            perf = 'Great';
+                        }
+                        else if (rowData.grade >= 90) {
+                            perf = 'Excellent';
+                        } else {
+                            perf = 'Poor';
+                        }
+                        val = perf;
+                    }
+                    row.push(val);
+                })
+                sheet.addRow(row);
+            } );
+        // console.log('rows are ', datarow);
+        // sheet.addRows(datarow);
+        workbook.xlsx.writeBuffer().then((data) => {
+            const blob = new Blob([data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'PerformanceReport.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+        })
+        // XLSX.utils.sheet_add_aoa(ws, heading);
+        // XLSX.utils.sheet_add_aoa(ws, innerHeading);
+        // XLSX.utils.sheet_add_json(ws, datarow, { origin: 'A2', skipHeader: true });
+        // XLSX.utils.book_append_sheet(wb, ws, 'Sheet 1');
+        // XLSX.writeFile(wb, 'PerformanceReport.xlsx');
+    };
     return (
         <>
             <Tabs value={curtab} onChange={handleTabChange} centered>
@@ -333,18 +412,11 @@ const ClassRemarks = (props) => {
                 <Tab label="Finals" />
             </Tabs>
             <Box sx={{ width: '100%', alignContent: 'end' }}>
-                {/* <IconButton
-                    edge="end"
-                    color={'#000'}
-                    onClick={() => { }}
-                    aria-label="close">
-                    <span className="material-symbols-rounded">download</span>
-                </IconButton> */}
                 <Chip
                     sx={{ float: 'right', m: 1 }}
                     size='small'
                     label="Export Excel file"
-                    onClick={() => { }}
+                    onClick={handleExport}
                     // onDelete={() => { }}
                     icon={<span className="material-symbols-rounded">download</span>}
                     variant="outlined"

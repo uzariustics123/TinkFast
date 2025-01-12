@@ -1,16 +1,22 @@
 # TinkFast
+
 #### An E-learning Platform conducting interactive digital quizes intended and dedicated to TCGC(Tangub City Global College)
-![alt text](./src/assets/Screenshot.png 'Screenshot')
+
+![alt text](./src/assets/Screenshot.png "Screenshot")
+
 ## Objectives
+
 - Implement Login & Registration
 - Create, Update, Delete Class
 - Allow Joining others within a class via code or class id
   Example:
   - Teacher
-  - Student 
+  - Student
 - Create, Update, Delete Quiz
 - Create Quiestions within a quiz form.
+
 ### Quizes and Questions
+
 - Customize each quizes and questions
   - Disallow students from starting a quiz unless started by the quiz facilitator.
   - Set question timer limit.
@@ -22,13 +28,13 @@
     - Essay
     - Selection
 
-
 ## To address:
-- Need admin for maintenance 
-- Need fill in the blank and true or false sa quiz (no need, this is acheivable via single choice with 'true' or 'false' choices)
+
+- Need admin for maintenance
+- Need fill in the blank and true or false sa quiz ✅ (no need true or false, this is acheivable via single choice with 'true' or 'false' choices)
 - Dapat dili mas ubos sa starting time and date ang set na duration sa quiz ✅(disabled past dates and more...)
-- Ma edit ang Quiz
-- Optimize ang katong charts and other performance analysis
+- Ma edit ang Quiz✅
+- Optimize ang katong charts and other performance analysis ✅
 - Recycle ang Quiz
 - Archiving sa quiz
 - File Export pdf and excel ✅

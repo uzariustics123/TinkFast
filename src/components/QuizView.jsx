@@ -20,6 +20,8 @@ import SingleChoice from './QuizTypes/SingleChoice';
 import MatchingType from './QuizTypes/MatchingType';
 import { getQuizScore, getQuizTotalPoints } from '../Utils';
 import { FileAttachment } from './QuizTypes/FileAttachment';
+import { FillInTheBlank } from './QuizTypes/FillInTheBlank';
+import { getDatabase, ref, set, onValue } from "firebase/database";
 
 const Transition = forwardRef(function Transition(props, ref) {
     return <Slide direction="up" ref={ref} {...props} />;
@@ -59,6 +61,9 @@ export const QuizView = () => {
                 responseData.questionResponse[question.id] = userResponse;
                 return responseData;
             case 'setFileUpResponse':
+                responseData.questionResponse[question.id] = userResponse;
+                return responseData;
+            case 'setFillInResponse':
                 responseData.questionResponse[question.id] = userResponse;
                 return responseData;
             case 'reset':
@@ -108,12 +113,32 @@ export const QuizView = () => {
     useEffect(() => {
         getQuestions();
         setActiveQIndex(0);
+        // startTimer(10);
         dispatchResponse({
             type: 'reset'
         });
         setCheatingAttempt(0);
     }, [quizOpenData]);
+    // const startTimer = (duration) => {
+    //     const timerRef = ref(realdb, "timer");
+    //     const endTime = Date.now() + duration * 1000;
 
+    //     // Store the end time in Firebase
+    //     set(timerRef, { endTime });
+
+    //     // Sync the timer updates in real-time
+    //     onValue(timerRef, (snapshot) => {
+    //         const data = snapshot.val();
+    //         if (data) {
+    //             const remaining = Math.max(0, Math.floor((data.endTime - Date.now()) / 1000));
+    //             console.log(`Time Remaining: ${remaining} seconds`);
+
+    //             if (remaining === 0) {
+    //                 console.log("Timer finished!");
+    //             }
+    //         }
+    //     });
+    // };
     const getQuestions = async () => {
         // const classRef = doc(db, 'classes', openedClass.classId);
         // const quizesRef = collection(classRef, 'quizes');
@@ -275,9 +300,10 @@ export const QuizView = () => {
                                 return (<SwiperSlide key={quiz.id}>
                                     <Card className="swiper-no-swiping" variant="outlined">
                                         <CardContent>
-                                            
+
                                             {quiz.type == 'essay' && <Essay questionData={quiz} />}
                                             {quiz.type == 'fileUpload' && <FileAttachment composeMode={false} questionData={quiz} />}
+                                            {quiz.type == 'fillInTheBlank' && <FillInTheBlank composeMode={false} questionData={quiz} />}
                                             {quiz.type == 'multiChoice' && <MultiChoice questionData={quiz} choices={quiz.choices} />}
                                             {quiz.type == 'singleChoice' && <SingleChoice questionData={quiz} choices={quiz.choices} />}
                                             {quiz.type == 'matchingType' && <MatchingType questionData={quiz} choices={quiz.choices} />}

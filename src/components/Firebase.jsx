@@ -4,6 +4,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } f
 import { getAnalytics } from "firebase/analytics";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
+import { getDatabase } from "firebase/database";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -17,6 +18,7 @@ const firebaseConfig = {
     messagingSenderId: import.meta.env.VITE_FB_MESSAGING_SENDER_ID,
     appId: import.meta.env.VITE_FB_APP_ID,
     measurementId: import.meta.env.VITE_FB_MESSUREMENT_ID,
+    databaseURL: import.meta.env.VITE_FB_DATABASE_URL
 };
 // const storageConfig = {
 //     apiKey: import.meta.env.VITE_FB_API_KEY2,
@@ -34,4 +36,5 @@ const app = initializeApp(firebaseConfig);
 // const analytics = getAnalytics(app);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+export const realdb = getDatabase(app);
 export default app;

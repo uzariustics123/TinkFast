@@ -1,0 +1,53 @@
+.card-item {
+    position: relative;
+    display: flex;
+    height: 200px;
+    padding: 1rem;
+    width: 350px;
+    border-radius: 49px;
+    background: #f4eddd;
+    box-shadow: 10px 10px 20px #cfc9bc,
+        -10px -10px 20px #fffffe;
+        background-size: cover;
+        align-items: center;
+flex-direction: column;
+}
+.header-db{
+    padding: 1rem, 0;
+    border-radius: 49px;
+    background-size:cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    /* box-shadow: 10px 10px 20px #cfc9bc,
+            -10px -10px 20px #fffffe;
+        background-size: cover; */
+        align-items: center;
+}
+.dash-header-container{
+    row-gap: 1.5rem;
+    padding: 1rem;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    width: 100%;
+}
+.anim-db-item{
+    height: 200px;
+    align-self: bottom;
+    justify-self: center;
+}
+.tp{
+    /* position: absolute; */
+    align-self: center;
+    justify-self: center;
+    place-self: center;
+}
+.chartbar{
+    padding: 1rem;
+    border-radius: 49px;
+        background: #f4eddd;
+        box-shadow: 10px 10px 20px #cfc9bc,
+            -10px -10px 20px #fffffe;
+        background-size: cover;
+}

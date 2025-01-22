@@ -28,7 +28,7 @@ export const ActivityReviewDialog = (props) => {
             const querySnapshot = await getDocs(filteredQuery);
             const questionlist = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
             setQuestions(questionlist);
-            console.log('questionslist', questionlist);
+            // console.log('questionslist', questionlist);
         } catch (error) {
             console.log(error);
         }
@@ -107,7 +107,7 @@ export const ActivityReviewDialog = (props) => {
                         <Typography sx={{ color: '#000', ml: 2, flex: 1, fontFamily: 'Open Sans' }} variant="h6" component="div">
                             Response Review
                         </Typography>
-                        <Tooltip title='Save'>
+                        <Tooltip title='Score onbtained'>
                             <Typography
                                 component="span"
                                 variant="body"
@@ -140,7 +140,7 @@ export const ActivityReviewDialog = (props) => {
                         {questions.map((question, index) => {
                             let responseFound = userResponse.questionResponse ? userResponse.questionResponse[question.id] : null;
                             // const [points, setPoints] = useState(responseFound.score || 0);
-                            console.log('reponse found: ', userResponse);
+                            // console.log('reponse found: ', userResponse);
                             const checkIndicator = { color: colors.green.A100, backgroundColor: colors.green[800] };
                             const qlables = {
                                 'matchingType': 'Matching Type',

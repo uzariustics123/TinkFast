@@ -47,7 +47,7 @@ const ProgressBar = React.memo(function ProgressBar(props) {
 
     return (
         <Element>
-            <Value>{`${valueInPercent.toLocaleString()} %`}</Value>
+            <Value>{`${valueInPercent.toLocaleString()} `}</Value>
             <Bar
                 className={clsx({
                     low: valueInPercent < 79,

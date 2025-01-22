@@ -2,7 +2,6 @@ import { Typography, TextField, TextareaAutosize, Box, colors, Chip, IconButton,
 import './styles/fileAttachment.css';
 import { useState, useContext } from "react";
 import { AppContext, QuizResponseContext } from '../../AppContext';
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { supabase } from '../Supabase';
 // import { storage } from '../Firebase';
 export const FileAttachment = (props) => {

@@ -1,19 +1,29 @@
-import React, { useCallback, useContext, useEffect, useReducer, useState } from 'react'
+import React, { forwardRef, useCallback, useContext, useEffect, useReducer, useState } from 'react'
 import { collection, doc, getDocs, query, where } from 'firebase/firestore'
 import { db } from './Firebase';
-import { DataGrid, GRID_STRING_COL_DEF } from '@mui/x-data-grid';
+import { DataGrid, GRID_STRING_COL_DEF, GridToolbar, GridToolbarExport } from '@mui/x-data-grid';
 import { AppContext, ClassContext } from '../AppContext';
-import { renderProgress } from './progress';
-import { SparkLineChart } from '@mui/x-charts';
-import { Box, Chip, IconButton, Tab, Tabs } from '@mui/material';
+import { renderEditProgress, renderProgress } from './progress';
+import { cheerfulFiestaPalette, LineChart, PieChart, SparkLineChart } from '@mui/x-charts';
+import { AppBar, Box, Chip, colors, Dialog, Divider, IconButton, Slide, Tab, Tabs, Toolbar, Typography } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import { renderStatus } from './status';
 const ExcelJS = require('exceljs');
+import './styles/classRemarks.css';
 // import XLSX from 'xlsx';
 // import * as XLSX from "xlsx";
+
+const xTransition = forwardRef(function Transition(props, ref) {
+    return <Slide direction="up" ref={ref} {...props} />;
+});
 const ClassRemarks = (props) => {
     const { openedClass } = useContext(ClassContext);
-    const {currentUserData} = useContext(AppContext);
+    const { currentUserData, gridxcolumn, setgridxcolumn, gridxrow, setgridxrow, gridxgrouping, setgridxgrouping } = useContext(AppContext);
     const [curtab, setTab] = useState(0);
     let periods = ['prelim', 'midterm', 'finals'];
+    const navigate = useNavigate();
+    const [performanceReportToggle, setPerformanceReportToggle] = useState(false);
+    const [currReportViewData, setCurrReportViewData] = useState({});
     const [acts, setActs] = useReducer((currentQuizes, action) => {
         console.log('called', action);
         const type = action.type;
@@ -115,10 +125,10 @@ const ClassRemarks = (props) => {
                     const queryResult = await getDocs(userQuery);
                     queryResult.forEach((doc) => {
                         let foundMembershipData = participantsMembershipData.find(foundItem => foundItem.uid === doc.data().uid);
-                        if( openedClass.classRole == 'student' && foundMembershipData.uid == currentUserData.uid) {
-                            
+                        if (openedClass.classRole == 'student' && foundMembershipData.uid == currentUserData.uid) {
+
                             participants.push({ userDoc: doc.id, ...doc.data(), ...foundMembershipData });
-                        }else if( openedClass.classRole == 'teacher'){
+                        } else if (openedClass.classRole == 'teacher') {
                             participants.push({ userDoc: doc.id, ...doc.data(), ...foundMembershipData });
                         }
                     });
@@ -159,57 +169,182 @@ const ClassRemarks = (props) => {
         display: 'flex',
         renderCell: (params) => <GridSparklineCell {...params} />,
     };
+    const detailedGraphChip = (params => {
+        const value = params?.value;
+        const chipStyle = {
+            border: `1px solid ${colors.green[900]}`,
+            color: colors.green[900],
+        }
+        const chipProp = {
+            icon: < span style={{ color: colors.green[800] }} className="material-symbols-rounded" > arrow_drop_down</span >
+        }
+        return (
+            <>
+                <Chip sx={{ ...chipStyle }} size='small' onClick={() => { togglePerfDialog(value) }} variant='outlined' {...chipProp} label='View Report'></Chip>
+            </>
+        )
+    })
+    const togglePerfDialog = (value) => {
+        let data = {
+            ...value,
+            xcol: [
+                // { field: 'id', headerName: '', width: 100 },
+                { field: 'title', headerName: 'Activity Name', width: 150 },
+                { field: 'category', headerName: 'Category', width: 100 },
+                { field: 'answered', headerName: 'Responded', width: 100 },
+                { field: 'score', headerName: 'Score', type: 'Number', width: 100 },
+                { field: 'totalScore', headerName: 'Total Score', type: 'Number', width: 120 },
+                { field: 'percentage', headerName: 'Score Percentage', type: 'Number', width: 200 },
+                { field: 'avg', headerName: '', width: 100 },
+            ],
+            xrow: [
+                ...value['quiz'].map(item => ({
+                    category: 'quiz',
+                    id: item.id,
+                    title: item.title,
+                    answered: item.answered ? 'Yes' : 'No',
+                    score: item.answered ? item.score : '--',
+                    totalScore: item.answered ? item.totalScore : '--',
+                    percentage: item.answered ? item.percentage : '--',
+                    avg: '',
+                })),
+                ...value['exam'].map(item => ({
+                    category: 'exam',
+                    id: item.id,
+                    title: item.title,
+                    answered: item.answered ? 'Yes' : 'No',
+                    score: item.answered ? item.score : '--',
+                    totalScore: item.answered ? item.totalScore : '--',
+                    percentage: item.answered ? item.percentage.toPrecision(2) : '--',
+                    avg: '',
+                })),
+                ...value['performance task'].map(item => ({
+                    category: 'performance task',
+                    id: item.id,
+                    title: item.title,
+                    answered: item.answered ? 'Yes' : 'No',
+                    score: item.answered ? item.score : '--',
+                    totalScore: item.answered ? item.totalScore : '--',
+                    percentage: item.answered ? item.percentage.toPrecision(2) : '--',
+                    avg: '',
+                })),
+                {
+                    category: '',
+                    id: '',
+                    title: '',
+                    answered: '',
+                    score: '',
+                    totalScore: '',
+                    percentage: '',
+                    avg: 23,
+                }
+            ],
+            linechartx:
+                [
+                    ...value['quiz']?.map(item => (item.title)),
+                    ...value['exam']?.map(item => (item.title)),
+                    ...value['performance task']?.map(item => (item.title))
+                ],
+            linecharty: [
+                {
+                    data: [
+                        ...value['quiz']?.map(item => (item.percentage)),
+                        ...value['exam']?.map(item => (item.percentage)),
+                        ...value['performance task']?.map(item => (item.percentage))
+                    ], label: 'Scoring Percentage', color: colors.blue[500], area: false,
+                },
+                // { data: [...value['exam']?.map(item => (item.percentage))], label: 'Exams', color: colors.yellow[900], area: true, },
+                // { data: [...value['performance task']?.map(item => (item.percentage))], label: 'PTs', color: colors.blue[900], area: true, },
+            ]
+        }
+        setCurrReportViewData(data);
+        console.log('vals:', data);
+
+        setPerformanceReportToggle(true);
+        console.log('toggled');
+
+    }
     const xcolumns = () => {
+        let ctgs = {
+            'quiz': 1,
+            'performance task': 1,
+            'exam': 1
+        }
         const xgridColumn = [
             { field: 'studentID', headerName: 'ID number', width: 100 },
             { field: 'name', headerName: 'Name', width: 200 },
             ...[...acts.quizes, ...acts.pt, ...acts.exams].map((quiz, index) => ({
                 field: quiz.id.toString(),
-                headerName: (quiz.category == 'quiz' ? 'Quiz ' : quiz.category == 'performance task' ? 'PT ' : quiz.category == 'exam' ? 'Exam ' : '') + (index + 1),
-                width: quiz.category == 'performance task' ? 200 : 100,
+                headerName: (quiz.category == 'quiz' ? 'Quiz ' : quiz.category == 'performance task' ? 'PT ' : quiz.category == 'exam' ? 'Exam ' : '') + ctgs[quiz.category]++,
+                width: quiz.category == 'performance task' ? 200 : 70,
                 editable: false,
                 description: quiz.title + ' - ' + quiz.description,
             })),
         ];
-        if (openedClass.classRole == 'teacher'){
+        if (openedClass.classRole == 'teacher')
+            xgridColumn.push(
+                {
+                    field: 'perfdetails',
+                    headerName: 'Detailed Report',
+                    renderCell: detailedGraphChip,
+                    width: 150,
+                    editable: false,
+                }
+            )
+        xgridColumn.push(
+            {
+                field: 'performance',
+                headerName: 'Indicator',
+                description: '',
+                ...sparklineColumnType,
+                width: 150,
+                editable: false,
+            }
+        )
+        if (openedClass.classRole == 'teacher') {
             xgridColumn.push(
                 {
                     field: 'grade',
                     headerName: 'Grade',
                     renderCell: renderProgress,
-                    width: 200,
-                    type: 'number',
+                    renderEditCell: renderEditProgress,
+                    width: 100,
                     editable: false,
                 },
             );
         }
         xgridColumn.push(
             {
-                field: 'performance',
-                headerName: 'Performance Chart',
-                ...sparklineColumnType,
+                field: 'gradeIndicator',
+                headerName: 'Remarks',
+                renderCell: statusChip,
                 width: 200,
                 editable: false,
             }
         )
+
         return xgridColumn;
     };
     const xgetGridRows = () => {
+        console.log('examrate', openedClass.examRate);
+        console.log('ptRate', openedClass.ptRate);
+        console.log('quizrate', openedClass.quizRate);
+
         const categoryWeights = {
-            performanceTask: 0.40,
-            exam: 0.30,
-            quiz: 0.30,
+            performanceTask: openedClass.ptRate ?? 0.40,
+            exam: openedClass.examRate ?? 0.30,
+            quiz: openedClass.quizRate ?? 0.30,
         };
         let griddata = rows.map((row) => {
             let rowSheet = {};
             let gainedScore = 0;
             let totalScore = 0;
-            let ptScore = 0;
-            let ptTotalScore = 0;
-            let examScore = 0;
-            let examTotalScore = 0;
-            let quizScore = 0;
-            let quizTotalScore = 0;
+            let ptScorePercentage = 0;
+            let ptTotalItems = 0;
+            let examScorePercentage = 0;
+            let examTotalItems = 0;
+            let quizScorePercentage = 0;
+            let quizTotalItems = 0;
             const rowData = {
                 id: row.uid,
                 studentID: row.studentID,
@@ -218,39 +353,110 @@ const ClassRemarks = (props) => {
                 grade: 0,
             };
 
+            rowData.perfdetails = {
+                personData: row,
+                categoryWeights: categoryWeights,
+                'quiz': [],
+                'performance task': [],
+                'exam': [],
+
+            };
 
             [...acts.quizes, ...acts.pt, ...acts.exams].forEach((quiz) => {
                 const response = responses.find(item => item.uid === row.uid && item.quizId === quiz.id);
                 rowData[quiz.id] = response ? response.score + ' / ' + response.totalScore : '- -';
+                let initialPersonResponse = {
+                    id: quiz.id,
+                    title: quiz.title,
+                    score: 0,
+                    totalScore: 0,
+                    answered: false,
+                    percentage: 0
+                }
                 if (response) {
+                    switch (quiz.category) {
+                        case 'performance task':
+                            ptScorePercentage += (response.score / response.totalScore) * 100;
+                            ptTotalItems += 1;
+                            initialPersonResponse = {
+                                id: quiz.id,
+                                title: quiz.title,
+                                score: response.score,
+                                totalScore: response.totalScore,
+                                answered: true,
+                                percentage: (response.score / response.totalScore) * 100
+                            }
+                            break;
+                        case 'exam':
+                            examScorePercentage += (response.score / response.totalScore) * 100;
+                            examTotalItems += 1;
+                            initialPersonResponse = {
+                                id: quiz.id,
+                                title: quiz.title,
+                                score: response.score,
+                                totalScore: response.totalScore,
+                                answered: true,
+                                percentage: (response.score / response.totalScore) * 100
+                            }
+                            break;
+                        case 'quiz':
+                            quizScorePercentage += (response.score / response.totalScore) * 100;
+                            quizTotalItems += 1;
+                            initialPersonResponse = {
+                                id: quiz.id,
+                                title: quiz.title,
+                                score: response.score,
+                                totalScore: response.totalScore,
+                                answered: true,
+                                percentage: (response.score / response.totalScore) * 100
+                            }
+                            break;
+                        default:
+                            break;
+                    }
                     gainedScore += response ? response.score : 0;
-                    ptScore += quiz.category == 'performance task' ? response.score : 0;
-                    examScore += quiz.category == 'exam' ? response.score : 0;
-                    quizScore += quiz.category == 'quiz' ? response.score : 0;
-                    ptTotalScore += quiz.category == 'performance task' ? response.totalScore : 0;
-                    examTotalScore += quiz.category == 'exam' ? response.totalScore : 0;
-                    quizTotalScore += quiz.category == 'quiz' ? response.totalScore : 0;
+
                     totalScore += response ? response.totalScore : 0;
                     rowData.performance.push(response.score != 0 ? Math.round((response.score / response.totalScore) * 100) : 0);
                 }
+                rowData.perfdetails[quiz.category].push(initialPersonResponse);
             });
-            console.log('pt: ', ptScore, '/', ptTotalScore);
-            console.log('exam: ', examScore, '/', examTotalScore);
-            console.log('quiz:', quizScore, '/', quizTotalScore);
-            let ptGrade = (ptScore != 0 && ptTotalScore != 0) ? ((ptScore / ptTotalScore) * 100) * categoryWeights.performanceTask : 0;
-            let examGrade = (examScore != 0 && examTotalScore != 0) ? ((examScore / examTotalScore) * 100) * categoryWeights.exam : 0;
-            let quizGrade = (quizScore != 0 && quizTotalScore != 0) ? ((quizScore / quizTotalScore) * 100) * categoryWeights.quiz : 0;
+            // console.log('pt: ', ptScorePercentage, '/', ptTotalItems, '=', ptScorePercentage / ptTotalItems);
+            // console.log('exam: ', examScorePercentage, '/', examTotalItems);
+            // console.log('quiz:', quizScorePercentage, '/', quizTotalItems);
+            let ptGrade = ptTotalItems > 0 ? (ptScorePercentage / ptTotalItems) * categoryWeights.performanceTask : 0;
+            let examGrade = examTotalItems > 0 ? (examScorePercentage / examTotalItems) * categoryWeights.exam : 0;
+            let quizGrade = quizTotalItems > 0 ? (quizScorePercentage / quizTotalItems) * categoryWeights.quiz : 0;
+
             console.log('pt grade:', ptGrade);
             console.log('exam grade:', examGrade);
             console.log('quiz grade:', quizGrade);
-
-
-            rowData.grade = Math.round(ptGrade + examGrade + quizGrade);
+            let finalGrade = Math.round(ptGrade + examGrade + quizGrade);
+            rowData.grade = finalGrade;
+            rowData.perfdetails.ptGrade = ptGrade;
+            rowData.perfdetails.examGrade = examGrade;
+            rowData.perfdetails.quizGrade = quizGrade;
+            rowData.perfdetails.grade = finalGrade;
+            if (finalGrade >= 90) {
+                rowData.gradeIndicator = 'Outstanding';
+            }
+            else if (finalGrade >= 85) {
+                rowData.gradeIndicator = 'Very Satisfactory';
+            }
+            else if (finalGrade >= 80) {
+                rowData.gradeIndicator = 'Satisfactory';
+            }
+            else if (finalGrade >= 75) {
+                rowData.gradeIndicator = 'Fairly Satisfactory';
+            }
+            else {
+                rowData.gradeIndicator = 'Did Not Met Expectation';
+            }
             rowSheet['Student ID'] = row.studentID;
             // rowData.performance = gainedScor e;
             return rowData;
-            
-       
+
+
         });
         return griddata;
     };
@@ -293,15 +499,28 @@ const ClassRemarks = (props) => {
             ],
         },
         {
+            groupId: 'Performance',
+            children: [
+                { field: 'performance' },
+                { field: 'perfdetails' },
+            ]
+        },
+        {
             groupId: 'Rating',
             children: [
                 { field: 'grade' },
-                { field: 'performance' },
+                { field: 'gradeIndicator' },
             ]
         },
     ];
 
+    // const PerformanceReportDialog = () => {
+    //     return (
+    //         <>
 
+    //         </>
+    //     )
+    // }
     const handleChanges = (changes) => {
         setRows((prevRows) => {
             const newRows = [...prevRows]
@@ -323,6 +542,13 @@ const ClassRemarks = (props) => {
         fetchData();
 
     };
+    const handlePdfExport = () => {
+        setgridxcolumn(xcolumns());
+        setgridxrow(xgetGridRows());
+        setgridxgrouping(xcolumnGroupingModel);
+        navigate('/export-pdf');
+        // window.open('/export-pdf', "_blank");
+    }
     const handleExport = () => {
         const workbook = new ExcelJS.Workbook();
         workbook.creator = 'Tinkfast';
@@ -332,62 +558,80 @@ const ClassRemarks = (props) => {
         // workbook.lastPrinted = new Date();
         // workbook.properties.date1904 = true;
         const sheet = workbook.addWorksheet('PerformanceReport');
-        sheet.mergeCells('A1', 'B2');
-        sheet.addRow(['Student Information', 'Activities', 'Rating'])
+        sheet.mergeCells('A1', 'B1');
+        // sheet.mergeCells('C1', 'J2');
+        // sheet.getCell('A1').value = 'Client List'
         // sheet.spliceRows(1, 0, ['Student Information', 'Activities', 'Rating']);
-        const headerColms = [
-            {header: 'Student Information', key: 'studentInformation', width: 30},
-            {header: 'Activities', key: 'activities', width: 30},
-            {header: 'Rating', key: 'rating', width: 30},
-        ]
+        const header1 = [];
+        header1[1] = 'Student Information';
+        header1[3] = 'Activities';
+        header1[[...acts.quizes, ...acts.pt, ...acts.exams].length + 3] = 'Rating';
+        sheet.getRow(1).values = header1;
+        const header2 = [];
+        header2[3] = 'Quizzes';
+        header2[[...acts.quizes].length + 3] = 'Performance Tasks';
+        sheet.getRow(2).values = header2;
+        const header3 = [];
         console.log('xcolumn', xcolumns());
-        
-        const dataColumn =
-            xcolumns().map((xcolumn) => {
+
+        const dataColumn = [
+            ...xcolumns().map((xcolumn) => {
+                let header = xcolumn.headerName;
                 let colm = {
-                    header: xcolumn.headerName,
+                    // header: xcolumn.headerName,
                     key: xcolumn.field,
-                    width: 10,
+                    // width: 10,
                 };
                 if (colm.key == 'performance') {
-                    colm.header = 'Performance';
+                    header = 'Performance';
                 }
-                return colm.header;
-            });
-        
-        // sheet.columns = dataColumn;
-        sheet.addRow(dataColumn);
-        console.log('dataColumn',dataColumn);
-        
-        
-            xgetGridRows().map((rowData) => {
-                let row = [];
-                xcolumns().map(xcolumn => {
-                    console.log('xcolumn', xcolumn.field);
-                    console.log(xcolumn.field, rowData[xcolumn.field]);
-                    
-                    let val = rowData[xcolumn.field];
-                    if (xcolumn.field == 'performance') {
-                        let perf = '';
-                        if ((rowData.grade >= 75 && rowData.grade < 85)) {
-                            perf = 'Developing'
-                        }
-                        else if (rowData.grade >= 85 && rowData.grade <= 89) {
-                            perf = 'Great';
-                        }
-                        else if (rowData.grade >= 90) {
-                            perf = 'Excellent';
-                        } else {
-                            perf = 'Poor';
-                        }
-                        val = perf;
+                else if (colm.key == 'name') {
+                    colm.width = 20;
+                }
+                header3.push(header);
+                return colm;
+            })
+        ]
+        sheet.addRow(header3);
+        sheet.columns = dataColumn;
+        console.log('dataColumn', dataColumn);
+
+        const datarow = [
+            ...xgetGridRows().map((rowData) => {
+                const performance = () => {
+                    let perf = '';
+                    if ((rowData.grade >= 75 && rowData.grade < 85)) {
+                        perf = 'Developing'
                     }
-                    row.push(val);
-                })
-                sheet.addRow(row);
-            } );
+                    else if (rowData.grade >= 85 && rowData.grade <= 89) {
+                        perf = 'Great';
+                    }
+                    else if (rowData.grade >= 90) {
+                        perf = 'Excellent';
+                    } else {
+                        perf = 'Poor';
+                    }
+                    return perf;
+                }
+                const row = { ...rowData, test: 'test' };
+                row['performance'] = performance();
+                return row;
+            })
+        ];
         // console.log('rows are ', datarow);
-        // sheet.addRows(datarow);
+        const foundColm = sheet.getColumn(acts.exams[acts.exams.length - 1].id);
+        console.log('found col', foundColm);
+        foundColm.eachCell((cell, rowNumber) => {
+            console.log(`Row ${rowNumber}, Value: ${cell.value}`);
+        });
+
+        sheet.getRow(1).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'b9f6ca' },
+        };
+
+        sheet.addRows(datarow);
         workbook.xlsx.writeBuffer().then((data) => {
             const blob = new Blob([data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
             const url = window.URL.createObjectURL(blob);
@@ -411,7 +655,16 @@ const ClassRemarks = (props) => {
                 <Tab label="Midterm" />
                 <Tab label="Finals" />
             </Tabs>
-            <Box sx={{ width: '100%', alignContent: 'end' }}>
+            {/* <Box sx={{ width: '100%', alignContent: 'end' }}>
+                <Chip
+                    sx={{ float: 'right', m: 1 }}
+                    size='small'
+                    label="PDF printable version"
+                    onClick={handlePdfExport}
+                    // onDelete={() => { }}
+                    icon={<span className="material-symbols-rounded">download</span>}
+                    variant="outlined"
+                />
                 <Chip
                     sx={{ float: 'right', m: 1 }}
                     size='small'
@@ -421,7 +674,7 @@ const ClassRemarks = (props) => {
                     icon={<span className="material-symbols-rounded">download</span>}
                     variant="outlined"
                 />
-            </Box>
+            </Box> */}
             <DataGrid
                 rows={xgetGridRows()}
                 columns={xcolumns()}
@@ -432,7 +685,114 @@ const ClassRemarks = (props) => {
                 disableColumnSelector
                 // rowHeight={25}
                 columnGroupingModel={xcolumnGroupingModel}
+                slots={{
+                    toolbar: GridToolbar,
+                }}
             />
+            <Dialog
+                fullScreen
+                open={performanceReportToggle}
+                onClose={() => { }}
+                TransitionComponent={xTransition}>
+                <AppBar className='exclude-print' sx={{ borderRadius: '25px', marginTop: '.2rem', backgroundColor: 'white', position: 'sticky', boxShadow: 'none' }}>
+
+                    <Toolbar className='exclude-print'>
+                        <IconButton
+                            className='exclude-print'
+                            edge="start"
+                            color={'#000'}
+                            onClick={() => { setPerformanceReportToggle(false) }}
+                            aria-label="close">
+                            <md-icon>arrow_back</md-icon>
+                        </IconButton>
+                        <Typography sx={{ color: '#000', ml: 2, flex: 1, fontFamily: 'Open Sans' }} variant="h6" component="div">
+                            Performance Report
+                        </Typography>
+                    </Toolbar>
+                    {/* {showLoading && <Box sx={{ width: '100%' }}>
+                            <LinearProgress />
+                        </Box>} */}
+                </AppBar>
+                <Box sx={{ m: 2, mt: 0 }}>
+                    <div className='person-con'>
+                        <div className="img-person">
+                            <img src={currReportViewData?.personData?.imgUrl} style={{ borderRadius: '50%', border: `4px solid ${colors.blue[600]}`, width: '150px', height: '150px', justifySelf: 'center' }} />
+                        </div>
+                        <h3>{currReportViewData?.personData?.firstname} {currReportViewData?.personData?.lastname}</h3>
+                        <p style={{ color: colors.blue[500], textTransform: 'capitalize' }}>{currReportViewData?.personData?.role}</p>
+                        <p style={{ fontSize: '12px', fontWeight: 'bold', color: colors.blue[500] }}>{currReportViewData?.personData?.email}</p>
+                    </div>
+                    <Divider><span style={{ color: colors.grey[500], fontSize: '12px' }}>Grades & Standards</span></Divider>
+                    <div className='piecont' style={{ width: '100%', height: '200px', display: 'flex', flexDirection: 'row' }}>
+                        <PieChart
+                            colors={cheerfulFiestaPalette}
+                            // slotProps={{ legend: { hidden: true } }}
+                            series={[
+                                {
+                                    data: [
+                                        { id: 0, value: (currReportViewData?.categoryWeights?.performanceTask ?? 0) * 100, label: `Performance task = ${(currReportViewData?.categoryWeights?.performanceTask * 100)}%` },
+                                        { id: 1, value: (currReportViewData?.categoryWeights?.exam ?? 0) * 100, label: `Exam = ${(currReportViewData?.categoryWeights?.exam * 100)}%` },
+                                        { id: 2, value: (currReportViewData?.categoryWeights?.quiz ?? 0) * 100, label: `Performance task = ${(currReportViewData?.categoryWeights?.performanceTask * 100)}%` },
+                                    ],
+                                    cornerRadius: 5,
+                                    innerRadius: 20,
+                                    paddingAngle: 6
+                                },
+                            ]}
+                            height={140}
+                            width={500} />
+                        <div style={{ width: '400px', padding: '1rem' }}>
+
+                            <Typography component="span"
+                                variant="display"
+                                sx={{ color: 'text.seconday' }} >
+                                <strong>Grades:</strong><br />
+                                Performance Task:&nbsp;<span><strong>{currReportViewData.ptGrade?.toPrecision(2)}</strong> / {(currReportViewData?.categoryWeights?.performanceTask * 100)}</span>
+                                <br />
+                                Quizzes:&nbsp;<span><strong>{currReportViewData.quizGrade?.toPrecision(2)}</strong> / {(currReportViewData?.categoryWeights?.quiz * 100)}</span>
+                                <br />
+                                Exams:&nbsp;<span><strong>{currReportViewData.examGrade?.toPrecision(2)} </strong>/ {(currReportViewData?.categoryWeights?.exam * 100)}</span>
+                                <br />
+                                Final Grade:&nbsp;<span><strong style={{ fontSize: '18px' }}>{currReportViewData.grade}</strong></span>
+                            </Typography>
+                        </div>
+                    </div>
+                    <Divider><span style={{ color: colors.grey[500], fontSize: '12px' }}>Performance Per Activities</span></Divider>
+                    <div className="linecharcont" style={{ width: '100%', height: '500px' }}>
+                        <LineChart
+                            series={currReportViewData.linecharty}
+                            xAxis={[
+                                {
+                                    scaleType: 'point', data: currReportViewData.linechartx
+                                },
+                            ]}
+                        />
+                    </div>
+                    <br />
+                    <Divider><span style={{ color: colors.grey[500], fontSize: '12px' }}>Tabular Representation</span></Divider>
+                    <br />
+                    <div>
+                        <DataGrid
+                            rows={currReportViewData.xrow}
+                            columns={currReportViewData.xcol}
+                            // checkboxSelection
+                            disableSelectionOnClick
+                            // disableColumnSelector
+                            // rowHeight={25}
+                            slots={{
+                                toolbar: GridToolbar,
+                            }}
+                            slotProps={{
+                                aggregation: {
+                                    model: {
+                                        totalScore: 'sum',
+                                    },
+                                },
+                            }}
+                        />
+                    </div>
+                </Box >
+            </Dialog >
         </>
         // <div style={{ height: 'auto', width: '100%', color: 'black' }}>
         //     <ReactGrid
@@ -448,3 +808,46 @@ const ClassRemarks = (props) => {
 }
 
 export default ClassRemarks
+
+const statusChip = (props) => {
+    const label = props?.value;
+    let chipStyle = null;
+    let chipProp = {}
+    if (label === 'Outstanding') {
+        chipStyle = {
+            color: colors.green[800],
+            border: `1px solid ${colors.green[800]}`,
+        }
+        chipProp.icon = < span style={{ color: colors.green[800] }} className="material-symbols-rounded" > sentiment_excited</span >
+    }
+    else if (label === 'Very Satisfactory') {
+        chipStyle = {
+            color: colors.blue[800],
+            border: `1px solid ${colors.blue[800]}`,
+        }
+        chipProp.icon = < span style={{ color: colors.blue[800] }} className="material-symbols-rounded" > sentiment_very_satisfied</span >
+    }
+    else if (label === 'Fairly Satisfactory') {
+        chipStyle = {
+            color: colors.yellow[800],
+            border: `1px solid ${colors.yellow[800]}`,
+        }
+        chipProp.icon = < span style={{ color: colors.yellow[800] }} className="material-symbols-rounded" > sentiment_satisfied</span >
+    }
+    else if (label === 'Satisfactory') {
+        chipStyle = {
+            color: colors.orange[800],
+            border: `1px solid ${colors.orange[800]}`,
+        }
+        chipProp.icon = < span style={{ color: colors.orange[800] }} className="material-symbols-rounded" > sentiment_neutral</span >
+    }
+    else if (label === 'Did Not Met Expectation' || label === 'DNME') {
+        chipStyle = {
+            color: colors.red[800],
+            border: `1px solid ${colors.red[800]}`,
+        }
+        chipProp.icon = < span style={{ color: colors.red[800] }} className="material-symbols-rounded" > sentiment_very_dissatisfied</span >
+    }
+    return <Chip variant='outlined' style={{ ...chipStyle }} label={label} {...chipProp}></Chip >
+}
+

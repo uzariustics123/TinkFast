@@ -18,6 +18,8 @@ import { Snackbar, CircularProgress, Backdrop, ThemeProvider, createTheme, color
 import { blue, green, lightGreen, lime, yellow } from '@mui/material/colors';
 import { Users } from '../components/AdminScreens/Users';
 import { AdminPanel } from '../components/AdminScreens/AdminPanel';
+import { Dashboard } from '@mui/icons-material';
+import { DashboardPanel } from '../components/DashboardPanel';
 // import '../material-icons.css';
 
 function MainPage() {
@@ -26,7 +28,7 @@ function MainPage() {
     const [userData, setUserData] = useState({});
     const [classDocData, setClassDocData] = useState(null);
     const [openedClass, setOpenedClass] = useState(null);
-    const { currentUserData, setCurrentUserData, backdropOpen, setBackdropOpen, openSnackbar, setSnackbarOpen, snackbarMsg, setSnackbarMsg } = useContext(AppContext);
+    const { currentUserData, setSettingsDialog, setCurrentUserData, backdropOpen, setBackdropOpen, openSnackbar, setSnackbarOpen, snackbarMsg, setSnackbarMsg, setProfileDialog } = useContext(AppContext);
     const navigate = useNavigate();
     // if (auth.currentUser == null) {
     //     window.location = '/login';
@@ -63,9 +65,12 @@ function MainPage() {
     const handleCurrentDrawerMenuItem = (currentItem) => {
         if (!(currentItem == 'logout' || currentItem == 'profile' || currentItem == 'settings'))
             setCurrentPage(currentItem);
-        // else
-        // console.log('item is ', currentItem);
-        // console.log('current user', currentUserData);
+        if (currentItem == 'profile') {
+            setProfileDialog(true);
+        }
+        else if (currentItem == 'settings') {
+            setSettingsDialog(true);
+        }
 
     }
     useEffect(() => {
@@ -202,6 +207,7 @@ function MainPage() {
                             <div className="main-container">
                                 {currentPage === 'home' && <HomePage selectedClassCallback={openClassCallback} />}
                                 {currentPage === 'class' && <ClassView />}
+                                {currentPage === 'dashboard' && <DashboardPanel />}
                                 {/* {currentPage === 'home' ? <HomePage /> : <React.Fragment />} */}
                             </div>
                         </ClassContext.Provider> : <></>

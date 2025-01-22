@@ -7,7 +7,7 @@ import { auth, db } from '../components/Firebase';
 import { collection, addDoc, query, getDoc, getDocs, where, doc, updateDoc } from "firebase/firestore"
 import { QuizContext, ClassContext, AppContext, QuizResponseContext } from '../AppContext';
 import AddQuizDialog from './AddQuizDialog';
-import { Avatar, Badge, Box, Chip, colors, Divider, FormControl, IconButton, InputLabel, List, ListItem, ListItemAvatar, ListItemIcon, ListItemText, MenuItem, Select, Stack, Typography } from '@mui/material';
+import { Avatar, Badge, Box, Chip, colors, Divider, FormControl, IconButton, InputLabel, List, ListItem, ListItemAvatar, ListItemIcon, ListItemText, MenuItem, Select, Stack, Tooltip, Typography } from '@mui/material';
 import dayjs from 'dayjs';
 import { QuizView } from './QuizView';
 import { ViewActivityResponsesDialog } from './ViewActivityResponsesDialog';
@@ -26,6 +26,8 @@ function QuizesList() {
     const [activityResponsesDialog, setActivityResponsesDialogOpen] = useState(false);
     const [openReviewActivityDialog, setOpenReviewActivityDialog] = useState(false);
     const [responses, setResponses] = useState([]);
+    const [editMode, setEditMode] = useState(false);
+    const [toEditQuizDraft, setToEditQuizDraft] = useState([]);
     const [quizes, dispathQuizes] = useReducer((currentQuizes, action) => {
         if (action.type == 'setQuizes') {
             if (openedClass.classRole == 'teacher')
@@ -51,11 +53,14 @@ function QuizesList() {
     useEffect(() => {
         getActivities();
         getMyActivityResopnses();
-    }, [quizOpenData]);
+    }, [quizOpenData, openDialog, activityResponsesDialog]);
     const getActivities = async () => {
-        const classRef = doc(db, 'classes', openedClass.classId);
         const quizRef = collection(db, 'quizes');
-        const filteredQuery = query(quizRef, where('period', '==', period.current), where('classId', '==', openedClass.classId));
+        const filteredQuery = query(quizRef,
+            where('period', '==', period.current),
+            where('classId', '==', openedClass.classId),
+            where('status', '!=', 'archived')
+        );
         try {
             const querySnapshot = await getDocs(filteredQuery);
             const quizList = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
@@ -106,7 +111,7 @@ function QuizesList() {
         else if (index == 1)
             period.current = 'midterm';
         else if (index == 2)
-            period.current = 'final';
+            period.current = 'finals';
         getActivities();
         getMyActivityResopnses();
     }
@@ -125,13 +130,35 @@ function QuizesList() {
                 status: e.target.value
             });
             setSnackbarOpen(true);
-            setSnackbarMsg('Class updated');
+            setSnackbarMsg('Quiz updated');
         } catch (error) {
             setSnackbarOpen(true);
             setSnackbarMsg(error.message);
             console.log(error);
 
         }
+    }
+    const handleArchive = async (quizItem) => {
+        if (confirm('Are you sure you want to archive this item? This will no longer be visible in your class unless reactivated by Admin'))
+            try {
+                let foundItem = quizes.find(item => item.id === quizItem.id);
+                console.log('found item', foundItem);
+                // return;
+
+                const quizesRef = collection(db, 'quizes');
+                const quizDoc = doc(quizesRef, quizItem.id);
+                await updateDoc(quizDoc, {
+                    status: 'archived'
+                });
+                setSnackbarOpen(true);
+                setSnackbarMsg('Quiz archived');
+                getActivities();
+                getMyActivityResopnses();
+            } catch (error) {
+                setSnackbarOpen(true);
+                setSnackbarMsg(error.message);
+                console.log(error);
+            }
     }
     const startQuiz = (quizItem) => {
         console.log('open', quizOpenDialog);
@@ -140,6 +167,9 @@ function QuizesList() {
     }
     const editQuiz = (quizItem) => {
         console.log('to edit quiz', quizItem);
+        setDialogOpen(true);
+        setEditMode(true);
+        setToEditQuizDraft(quizItem);
     }
     const viewResponses = (actItem) => {
         setActivityResponsesDialogOpen(true);
@@ -148,7 +178,7 @@ function QuizesList() {
     const getMyActivityResopnses = async () => {
         let gotResponses = [];
         try {
-            console.log('user', currentUserData);
+            // console.log('user', currentUserData);
 
             const quizRef = collection(db, 'QuizResponses');
             const classQuery = query(quizRef, where('classId', '==', openedClass.id), where('uid', '==', currentUserData.uid));
@@ -189,6 +219,7 @@ function QuizesList() {
                 setActivityToReview,
                 userId,
                 setUserId,
+                editMode, setEditMode,
             }}>
 
                 <div className="quiz-tab-container" style={{ position: 'sticky' }}>
@@ -213,6 +244,9 @@ function QuizesList() {
                         {quizes.map((item, index) => {
                             let responded = false;
                             const startActProps = {};
+                            console.log('startdate', item.expectedStartDateTime);
+                            console.log('enddate', item.expectedEndDateTime);
+
                             startActProps.disabled = dayjs() < dayjs(item.expectedStartDateTime) || (item.expectedEndDateTime != '' && dayjs() > dayjs(item.expectedEndDateTime));
                             const foundResponse = responses.find(response => response.quizId == item.id);
                             if (foundResponse) {
@@ -222,7 +256,7 @@ function QuizesList() {
                                 <ListItem sx={{ minHeight: '150px', borderRadius: '24px', cursor: 'pointer' }} button={true} key={item.id} onClick={() => { }} alignItems="flex-start"
                                     secondaryAction={openedClass.classRole == 'teacher' ?
                                         <Stack className='quiz-actions'>
-                                            <Chip sx={{ alignSelf: 'center' }} size='small' label='View Responses' onClick={() => { viewResponses(item) }} variant='outlined' />
+                                            {/* <Chip sx={{ alignSelf: 'center' }} size='small' label='View Responses' onClick={() => { }} variant='outlined' /> */}
                                             <FormControl sx={{ minWidth: '100px' }} variant='standard' >
                                                 <InputLabel id="demo-simple-select-label">Status</InputLabel>
                                                 <Select
@@ -237,9 +271,21 @@ function QuizesList() {
                                                     <MenuItem value={'publish'}>Publish</MenuItem>
                                                 </Select>
                                             </FormControl>
-                                            <IconButton onClick={() => editQuiz(item)} size='small' sx={{ width: '25px', height: '25px', alignSelf: 'center' }} edge="end" aria-label="save">
-                                                <span style={{ fontSize: '18px' }} className='material-symbols-rounded'>edit</span>
-                                            </IconButton>
+                                            <Tooltip title='View Responses'>
+                                                <IconButton onClick={() => viewResponses(item)} size='small' sx={{ width: '25px', height: '25px', alignSelf: 'center' }} edge="end" aria-label="save">
+                                                    <span style={{ fontSize: '18px' }} className='material-symbols-rounded'>visibility</span>
+                                                </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title='Edit'>
+                                                <IconButton onClick={() => editQuiz(item)} size='small' sx={{ width: '25px', height: '25px', alignSelf: 'center' }} edge="end" aria-label="save">
+                                                    <span style={{ fontSize: '18px' }} className='material-symbols-rounded'>edit</span>
+                                                </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title='Archive'>
+                                                <IconButton onClick={() => { handleArchive(item) }} size='small' sx={{ width: '25px', height: '25px', alignSelf: 'center' }} edge="end" aria-label="save">
+                                                    <span style={{ fontSize: '18px' }} className='material-symbols-rounded'>archive</span>
+                                                </IconButton>
+                                            </Tooltip>
                                         </Stack>
                                         :
                                         openedClass.classRole == 'student' ?
@@ -273,18 +319,19 @@ function QuizesList() {
                                             </Typography>}
                                         secondary={
                                             <>
+                                                <div style={{}}> type: {item.category}</div>
                                                 <div style={{ maxWidth: '500px', lineClamp: '2' }}>{item.description}</div>
                                                 <Typography
                                                     component="span"
                                                     variant="caption"
                                                     sx={{ color: 'text.seconday', display: 'inline' }}>
-                                                    Starts at {dayjs(item.expectedStartDateTime).format('MMMM d, YYYY hh:mm a')}
+                                                    Starts at {dayjs(item.expectedStartDateTime).format('MMMM D, YYYY hh:mm a')}
                                                 </Typography> <br />
                                                 <Typography
                                                     component="span"
                                                     variant="caption"
                                                     sx={{ color: 'text.seconday', display: 'inline' }}>
-                                                    {(item.expectedEndDateTime != '' ? 'to ' + dayjs(item.expectedEndDateTime).format('MMMM d, YYYY hh:mm a') : '')}
+                                                    {(item.expectedEndDateTime != '' ? 'to ' + dayjs(item.expectedEndDateTime).format('MMMM D, YYYY hh:mm a') : '')}
                                                 </Typography>
                                             </>
                                         }
@@ -300,11 +347,15 @@ function QuizesList() {
                 {
                     openedClass.classRole == 'teacher' &&
                     <>
-                        <md-fab onClick={() => { setDialogOpen(!openDialog) }} class='add-quiz-fab' label="Add quiz" variant="primary" aria-label="Edit">
+                        <md-fab onClick={() => {
+                            setDialogOpen(!openDialog);
+                            setEditMode(false);
+                            setToEditQuizDraft({});
+                        }} class='add-quiz-fab' label="Add quiz" variant="primary" aria-label="Edit">
                             <md-icon slot="icon">add</md-icon>
                         </md-fab>
                         <ViewActivityResponsesDialog></ViewActivityResponsesDialog>
-                        <AddQuizDialog></AddQuizDialog>
+                        <AddQuizDialog toEditQuizDraft={toEditQuizDraft} ></AddQuizDialog>
                     </>}
                 {(openedClass.classRole == 'student') && <QuizView ></QuizView>}
                 <ActivityReviewDialog />

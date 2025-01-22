@@ -52,6 +52,7 @@ function Register() {
                             studentID: studentID,
                             uid: user.uid,
                             email: email,
+                            role: 'student',
                             imgUrl: 'https://www.shareicon.net/data/2017/01/06/868320_people_512x512.png'
                         });
                         console.log("User added with ID: ", docRef.id);
@@ -217,7 +218,7 @@ function Register() {
                     <div className='input-container'>
                         <TextField loading={loadingForm} onChange={handleEmailInputChange} width={200} style={{ alignSelf: 'center' }} prepend={<span className="material-symbols-outlined" style={{ color: 'var(--primary)' }}>email</span>} type='email' label={'Email'} className=''></TextField>
 
-                        <TextField loading={loadingForm} onChange={handleSIDInputChange} width={200} style={{ alignSelf: 'center' }} prepend={<span className="material-symbols-outlined" style={{ color: 'var(--primary)' }}>id_card</span>} type='text' label={'Student ID'} className=''></TextField>
+                        <TextField loading={loadingForm} onChange={handleSIDInputChange} width={200} style={{ alignSelf: 'center' }} prepend={<span className="material-symbols-outlined" style={{ color: 'var(--primary)' }}>id_card</span>} type='text' label={'School ID'} className=''></TextField>
 
                         <TextField loading={loadingForm} onChange={handleFnameInputChange} width={200} style={{ alignSelf: 'center' }} prepend={<span className="material-symbols-outlined" style={{ color: 'var(--primary)' }}>person</span>} type='text' label={'First Name'} className=''></TextField>
 

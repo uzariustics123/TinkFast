@@ -24,7 +24,8 @@
 .quiz-actions {
     display: flex;
     flex-direction: row !important;
-    column-gap: 1rem !important;
+    column-gap: .5rem !important;
+    row-gap: .5rem !important;
 
     @media only screen and (max-width:900px) {
         flex-direction: column !important;

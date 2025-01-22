@@ -26,7 +26,7 @@ function HomePage({ selectedClassCallback }) {
     const classMemberDBRef = collection(db, "classMembers");
 
     useEffect(() => {
-        console.log('currentUserData', currentUserData.currentUser);
+        console.log('currentUserData', currentUserData);
 
         const classTitleTF = classTitleRef.current;
         const classDescTF = classTitleRef.current;
@@ -92,6 +92,9 @@ function HomePage({ selectedClassCallback }) {
                 className: classTitle,
                 classDesc: classDesc,
                 classOwner: currentUser.uid,
+                ptRate: 0.40,
+                examRate: 0.30,
+                quizRate: 0.30,
             });
             try {
                 const classMemberInsertion = await addDoc(classMemberDBRef, {
@@ -246,22 +249,22 @@ function HomePage({ selectedClassCallback }) {
                 </p>
                 <Player className='home-anim' autoplay loop src="/anims/home-anim.json" />
                 <div className="banner-actions">
-                    {currentUserData.currentUser.emailVerified ?
-                        <>
-                            <Chip sx={{ borderColor: colors.green[900], color: colors.green[800], fontWeight: 'bold' }} variant='outlined' onClick={createClassPrompt} icon={<span slot='icon' className="material-symbols-outlined">add</span>} label='Create Class'>
-                            </Chip>
-                            <Chip className='join-chip' sx={{ p: 1, backgroundColor: colors.green[900], color: colors.green[500], fontWeight: 'bold' }} onClick={() => { setJoinClassDialogOpen(!joinClassDialogOpen) }} label='Join Class' icon={<span style={{ color: colors.green[500] }} slot='icon' className="material-symbols-outlined">group_add</span>}>
-                            </Chip>
-                        </>
-                        :
-                        <>
+
+                    <>
+                        {currentUserData.role == 'teacher' && < Chip sx={{ borderColor: colors.green[900], color: colors.green[800], fontWeight: 'bold' }} variant='outlined' onClick={createClassPrompt} icon={<span slot='icon' className="material-symbols-outlined">add</span>} label='Create Class'>
+                        </Chip>}
+                        <Chip className='join-chip' sx={{ p: 1, backgroundColor: colors.green[900], color: colors.green[500], fontWeight: 'bold' }} onClick={() => { setJoinClassDialogOpen(!joinClassDialogOpen) }} label='Join Class' icon={<span style={{ color: colors.green[500] }} slot='icon' className="material-symbols-outlined">group_add</span>}>
+                        </Chip>
+                    </>
+
+                    {/* <>
                             <Chip className='join-chip' sx={{ p: 1, backgroundColor: colors.green[900], color: colors.green.A100, fontWeight: 'bold' }} onClick={() => { sendVerificationEmail() }} label='Verify my email address' icon={<span style={{ color: colors.green[500] }} slot='icon' className="material-symbols-outlined">email</span>}>
                             </Chip>
-                        </>
-                    }
+                        </> */}
+
 
                 </div>
-            </div>
+            </div >
             <ClassList ref={classListRef} selectedClassCallback={selectedClassCallback} />
             <Dialog
                 open={joinClassDialogOpen}

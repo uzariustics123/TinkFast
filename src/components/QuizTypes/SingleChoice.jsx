@@ -7,11 +7,8 @@ const SingleChoice = (props) => {
     const [choiceItems, setChoiceItems] = useState([...props.questionData.choices]);
     const { quizResponse, dispatchResponse } = useContext(QuizResponseContext);
     const questionOnchange = (e) => {
-        // console.log('test log e', e.target.value);
-        // const response = e.target.value;
         const points = getQuestionScore(questData, e.target.value);
         console.log('points', points);
-
         const answerData = {
             response: e.target.value,
             type: questData.type,

@@ -8,7 +8,7 @@ const xTransition = forwardRef(function Transition(props, ref) {
     return <Slide direction="up" ref={ref} {...props} />;
 });
 export const ViewActivityResponsesDialog = () => {
-    const { activityResponsesDialog, setActivityResponsesDialogOpen, activityItemToViewResponses,activityToReview, setOpenReviewActivityDialog, setActivityToReview, userId, setUserId } = useContext(QuizContext);
+    const { activityResponsesDialog, setActivityResponsesDialogOpen, activityItemToViewResponses, activityToReview, openReviewActivityDialog, setOpenReviewActivityDialog, setActivityToReview, userId, setUserId } = useContext(QuizContext);
     const { openedClass } = useContext(ClassContext);
     const [participantes, setParticipantes] = useState([{}]);
     const [responses, setResponses] = useState([]);
@@ -17,7 +17,7 @@ export const ViewActivityResponsesDialog = () => {
 
         getActivityResopnses();
         getClassStudents();
-    }, [activityItemToViewResponses]);
+    }, [activityItemToViewResponses, openReviewActivityDialog]);
     const getActivityResopnses = async () => {
         let gotResponses = [];
         try {
@@ -115,6 +115,8 @@ export const ViewActivityResponsesDialog = () => {
                         {responses.map((response, index) => {
                             const userFound = participantes.find(participant => participant.uid === response.uid);
                             const performanceIndicatorStyles = {};
+                            console.log('id: ' + response.id);
+
                             const scorePercentage = response.score != 0 ? (response.score / response.totalScore) * 100 : 0;
                             let performanceIndicatorText = '';
                             if ((scorePercentage >= 75 && scorePercentage < 85)) {
@@ -128,7 +130,7 @@ export const ViewActivityResponsesDialog = () => {
                                 performanceIndicatorStyles.border = '1px solid ' + colors.green[500];
                             }
                             else if (scorePercentage >= 90) {
-                                performanceIndicatorText = 'Excellent';
+                                performanceIndicatorText = 'Outstanding';
                                 performanceIndicatorStyles.color = colors.green[600];
                                 performanceIndicatorStyles.border = '2px solid ' + colors.green[600];
                             } else {
@@ -156,7 +158,7 @@ export const ViewActivityResponsesDialog = () => {
                                                     component="span"
                                                     variant="body2"
                                                     sx={{ color: 'text.primary', display: 'inline' }}>
-                                                    {`${ userFound?.firstname ?? ''} ${userFound?.lastname ?? ''}`}
+                                                    {`${userFound?.firstname ?? ''} ${userFound?.lastname ?? ''}`}
                                                 </Typography>}
                                             secondary={
                                                 <>

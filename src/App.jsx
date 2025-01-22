@@ -12,15 +12,22 @@ import PreLoader from './screens/PreLoader.jsx'
 import Material3 from './screens/Material3.jsx';
 import { ReactNotifications } from 'react-notifications-component';
 import { AppContext } from './AppContext.jsx';
+import { PrintableRemarks } from './components/PrintableRemarks.jsx';
+import { ProfileDialog } from './components/ProfileDialog.jsx';
 
 function App() {
   const [loading, setLoading] = useState(true);
-  const [drawerActiveItem, setDrawerActiveItem] = useState('Users');
+  const [drawerActiveItem, setDrawerActiveItem] = useState('All Users');
   const [currentUserData, setCurrentUserData] = useState({});
   const [currentUserInfo, setCurrentUserInfo] = useState(null);
   const [backdropOpen, setBackdropOpen] = useState(false);
   const [openSnackbar, setSnackbarOpen] = useState(false);
   const [snackbarMsg, setSnackbarMsg] = useState('');
+  const [gridxcolumn, setgridxcolumn] = useState([]);
+  const [gridxrow, setgridxrow] = useState([]);
+  const [gridxgrouping, setgridxgrouping] = useState([]);
+  const [profileDialog, setProfileDialog] = useState(false);
+  const [settingsDialog, setSettingsDialog] = useState(false);
   useEffect(() => {
     // Simulate a data loading delay
     setTimeout(() => {
@@ -40,6 +47,16 @@ function App() {
         setSnackbarMsg,
         drawerActiveItem,
         setDrawerActiveItem,
+        gridxcolumn,
+        setgridxcolumn,
+        gridxrow,
+        setgridxrow,
+        gridxgrouping,
+        setgridxgrouping,
+        profileDialog,
+        setProfileDialog,
+        settingsDialog,
+        setSettingsDialog,
       }}>
 
         <ReactNotifications />
@@ -52,6 +69,8 @@ function App() {
               <Route path="/main" element={<MainPage />} />
               <Route path="/material3" element={<Material3 />} />
               <Route path="/preloader" element={<PreLoader />} />
+              <Route path="/profile" element={<ProfileDialog />} />
+              <Route path="/export-pdf" element={<PrintableRemarks />} />
             </Routes>
           </Router>
         </Suspense>

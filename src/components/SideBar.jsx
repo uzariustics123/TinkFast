@@ -8,13 +8,15 @@ import { Divider } from 'ui-neumorphism';
 import { auth, db } from './Firebase';
 import { collection, getDoc, getDocs, query, where } from 'firebase/firestore';
 import { AppContext } from '../AppContext';
+import { ProfileDialog } from './ProfileDialog';
+import { Settings } from './Settings';
 // import routes from '../routes/index.js'
 // import { Card, withClickOutside, detectElementInDOM } from 'ui-neumorphism'
 
 
 
 function Sidebar({ onMenuItemClick, activeItem }) {
-    const { setDrawerActiveItem } = useContext(AppContext);
+    const { setDrawerActiveItem, currentUserData } = useContext(AppContext);
     const [currentItem, setItem] = useState('home');
     const [windowSize, setWindowSize] = useState([0, 0]);
     const [userData, setUserData] = useState(null);
@@ -43,7 +45,6 @@ function Sidebar({ onMenuItemClick, activeItem }) {
     }, [auth.currentUser]);
     useEffect(() => {
         if (userData !== null) {
-            setImgUrl(userData.imgUrl);
             setFirstname(userData.firstname);
             setLastname(userData.lastname);
             setEmail(userData.email);
@@ -80,10 +81,10 @@ function Sidebar({ onMenuItemClick, activeItem }) {
                 <div className="drawer-toggler"></div>
                 {/* <h1 className='brand-name'>{windowSize[0] < 600 ? 'TF' : 'TinkFast'}</h1> */}
                 <div className="user-profile">
-                    <img src={imgUrl} alt="" className="user-img" />
+                    <img src={currentUserData?.imgUrl} alt="" className="user-img" />
                     <div className="user-info">
-                        <p className="user-name">{firstname + ' ' + lastname}</p>
-                        <p className="user-email">{userEmail}</p>
+                        <p className="user-name">{currentUserData?.firstname + ' ' + currentUserData?.lastname}</p>
+                        <p className="user-email">{currentUserData?.email}</p>
                     </div>
                 </div>
                 <p className='menu-sub'>Pages</p>
@@ -145,6 +146,8 @@ function Sidebar({ onMenuItemClick, activeItem }) {
                     <md-filled-button onClick={handleLogout} form="logout-dialog-id" value="ok">Logout</md-filled-button>
                 </div>
             </md-dialog>
+            <ProfileDialog />
+            <Settings />
         </>
     )
 

@@ -1,0 +1,42 @@
+.prof-con{
+    width: 400px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.summaries{
+    display: flex;
+    flex-direction: row;
+    margin-top: 1rem;
+    gap: 1rem;
+}
+.item-sum{
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: center;
+    /* gap: .5rem; */
+}
+.sum-item-title{
+    font-size: 18px;
+    font-weight: bold;
+}
+.sum-item-desc{
+    font-size: 14px;
+    color: rgb(154, 154, 154) !important;
+}
+.mydivider{
+    width: 1px;
+    height: 60px;
+    background-color: rgb(206, 206, 206);
+    
+}
+.img-lo{
+    position: relative;
+}
+.change-poto-icon{
+    top: 1px;
+    right: 1rem;
+    /* position: absolute; */
+}

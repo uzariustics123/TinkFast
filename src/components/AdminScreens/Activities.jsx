@@ -237,6 +237,7 @@ export const Activities = (props) => {
 
     const updateRow = async (newData) => {
         setBackdropOpen(true);
+        delete newData.quizdetails;
         try {
             const docRef = doc(db, "quizes", newData.id);
             await updateDoc(docRef, newData);

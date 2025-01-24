@@ -16,7 +16,7 @@ export const ProfileDialog = () => {
     const [filePath, setfilepath] = useState('');
     const [file, setFile] = useState(null);
     const [loading, setloading] = useState(false);
-    console.log('us', currentUserData);
+    // console.log('us', currentUserData);
     const VisuallyHiddenInput = styled('input')({
         clip: 'rect(0 0 0 0)',
         clipPath: 'inset(50%)',
@@ -29,17 +29,25 @@ export const ProfileDialog = () => {
         width: 1,
     });
     useEffect(() => {
-        getClasses().then(classess => {
-            setClasses(classess);
-            fetchAllUsers(classess, 30).then(allUsers => {
-                console.log("Users fetched successfully:", allUsers.length);
-                setClassParticipants(allUsers);
-                // Store allUsers in a variable or state for later use
-            });
-            getActivities(classess, 30).then((activities) => {
-                setActs(activities);
-            });
-        })
+        let isMounted = true;
+        if (isMounted) {
+            getClasses().then(classess => {
+                console.log('called', isMounted);
+
+                setClasses(classess);
+                fetchAllUsers(classess, 30).then(allUsers => {
+                    console.log("Users fetched successfully:", allUsers.length);
+                    setClassParticipants(allUsers);
+                    // Store allUsers in a variable or state for later use
+                });
+                getActivities(classess, 30).then((activities) => {
+                    setActs(activities);
+                });
+            })
+        }
+        return () => {
+            isMounted = false;
+        };
     }, []);
     const getActivities = async (classes, pageSize = 30) => {
         const quizRef = collection(db, 'quizes');
@@ -72,7 +80,7 @@ export const ProfileDialog = () => {
                 }
             }
 
-            console.log("All acts:", actsList);
+            // console.log("All acts:", actsList);
             return actsList; // Return the full list of users
         } catch (error) {
             console.error("Error fetching all activities:", error);

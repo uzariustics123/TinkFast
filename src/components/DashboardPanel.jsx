@@ -160,8 +160,8 @@ export const DashboardPanel = () => {
   const classNames = classes.map(item => item.className);
 
   const getLineEntries = () => {
-    const studentEntries = { data: [], label: 'People', color: colors.green[900], area: true, };
-    const actsEntries = { data: [], label: 'Activities', color: colors.cyan[900], area: true, };
+    const studentEntries = { data: [], label: 'People', color: colors.green[900], area: false, };
+    const actsEntries = { data: [], label: 'Activities', color: colors.cyan[900], area: false, };
     classes.forEach((klasi, index) => {
       const filteredStudents = classParticipants.filter(parti => parti.classId == klasi.id);
       const filteredActs = acts.filter(act => act.classId == klasi.id);

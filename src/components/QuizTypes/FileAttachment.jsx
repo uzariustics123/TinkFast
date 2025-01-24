@@ -38,27 +38,31 @@ export const FileAttachment = (props) => {
 
     }
     const handleFileUpload = async (event) => {
-        const file = event.target.files[0];
-        const formData = new FormData();
-        formData.append('uploadedFile', file);
-        // uploadFile(file);
-        const fileUrl = await uploadSupabase(file);
-        setFileUrl(fileUrl.publicUrl);
-        console.log('filepath', fileUrl);
-        const answerData = {
-            response: fileUrl.publicUrl,
-            type: questData.type,
-            points: 0,
-            status: 'partial'
-        }
-        dispatchResponse({
-            type: 'setFileUpResponse',
-            id: props.questionData,
-            data: answerData,
-            question: questData
-        });
+        try {
 
-        ;
+            const file = event.target.files[0];
+            const formData = new FormData();
+            formData.append('uploadedFile', file);
+            // uploadFile(file); 
+            const fileUrl = await uploadSupabase(file);
+            setFileUrl(fileUrl.publicUrl);
+            console.log('filepath', fileUrl);
+            const answerData = {
+                response: fileUrl.publicUrl,
+                type: questData.type,
+                points: 0,
+                status: 'partial'
+            }
+            dispatchResponse({
+                type: 'setFileUpResponse',
+                id: props.questionData,
+                data: answerData,
+                question: questData
+            });
+        } catch (error) {
+            console.log('error', error);
+
+        }
     };
     return (
         <div className="quiz-container">
@@ -96,10 +100,17 @@ export const FileAttachment = (props) => {
                                 size='small'
                             >
                                 <span style={{ fontSize: '18px' }} className='material-symbols-rounded'>attach_file</span>
-                                <VisuallyHiddenInput
+                                {/* <VisuallyHiddenInput
                                     type="file"
                                     onChange={handleFileUpload}
                                     multiple
+                                /> */}
+                                <input
+                                    style={{ display: 'none' }}
+                                    id="upload-photo"
+                                    name="upload-photo"
+                                    onChange={handleFileUpload}
+                                    type="file"
                                 />
                             </IconButton>
                         </>

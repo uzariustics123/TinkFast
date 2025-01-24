@@ -56,6 +56,9 @@ function AddQuizDialog(props) {
             case 'description': {
                 return { ...currentData, description: action.data };
             }
+            case 'duration': {
+                return { ...currentData, duration: action.data };
+            }
             case 'status': {
                 return { ...currentData, status: action.data };
             }
@@ -80,6 +83,7 @@ function AddQuizDialog(props) {
                     description: '',
                     status: 'draft',
                     period: 'prelim',
+                    duration: 30,
                     category: 'quiz',
                     expectedStartDateTime: dayjs().format('MM/DD/YYYY hh:mm A'),
                     expectedEndDateTime: '',
@@ -94,6 +98,7 @@ function AddQuizDialog(props) {
         description: '',
         status: 'draft',
         period: 'prelim',
+        duration: 30,
         category: 'quiz',
         expectedStartDateTime: dayjs().format('MM/DD/YYYY hh:mm A'),
         expectedEndDateTime: '',
@@ -815,6 +820,10 @@ function AddQuizDialog(props) {
         let quitzDesc = e.target.value;
         dispatchQuizData({ type: 'description', data: quitzDesc });
     }
+    const quizDurationFieldChange = (e) => {
+        let val = e.target.value;
+        dispatchQuizData({ type: 'duration', data: val });
+    }
     const quizStatusFieldChange = (e) => {
         let quitzStatus = e.target.value;
         dispatchQuizData({ type: 'status', data: quitzStatus });
@@ -868,12 +877,19 @@ function AddQuizDialog(props) {
         console.log('opened class', openedClass);
         // const classRef = doc(db, 'classes', openedClass.classId);
         try {
-            const quizDataItem = { ...quizData, classId: openedClass.classId, quizCreator: currentUserData.uid };
+            const quizDataItem = { ...quizData, classId: openedClass.classId, quizCreator: currentUserData.uid, expectedEndDateTime: dayjs(enddtfvalue).format('MMMM D, YYYY hh:mm a') };
+            console.log('to save quiz data', quizDataItem);
+
             let quizesRef = null;
             let quizSaveResult = null;
             if (editMode) {
-                quizesRef = doc(db, 'quizes', quizData.id);
-                quizSaveResult = await updateDoc(quizesRef, quizDataItem);
+                try {
+                    quizesRef = doc(db, 'quizes', quizDataItem.id);
+                    quizSaveResult = await updateDoc(quizesRef, quizDataItem);
+                    console.log('saving edits', quizSaveResult);
+                } catch (error) {
+                    console.log('error editing'.error);
+                }
             }
             else {
                 quizesRef = collection(db, 'quizes');
@@ -982,10 +998,13 @@ function AddQuizDialog(props) {
                     <div className="row">
                         <Container className='quizContainer'>
                             <FormControl size='small' fullWidth sx={{ mt: 1 }}>
-                                <TextField size='small' defaultValue={toEditQuizDraft.title} fullWidth onChange={quizTitltFieldChange} class='quiz-title' label="Quiz Title" />
+                                <TextField size='small' defaultValue={toEditQuizDraft.title} fullWidth onChange={quizTitltFieldChange} className='quiz-title' label="Quiz Title" />
                             </FormControl>
                             <FormControl size='small' fullWidth sx={{ mt: 1 }}>
-                                <TextField size='small' defaultValue={toEditQuizDraft.description} fullWidth onChange={quizDescFieldChange} class='quiz-desc' label="Quiz Description" />
+                                <TextField size='small' defaultValue={toEditQuizDraft.description} fullWidth onChange={quizDescFieldChange} className='quiz-desc' label="Quiz Description" />
+                            </FormControl>
+                            <FormControl size='small' fullWidth sx={{ mt: 1, mb: 1 }}>
+                                <TextField size='small' type='Number' defaultValue={quizData.duration} fullWidth onChange={quizDurationFieldChange} label="Duration (minutes)" />
                             </FormControl>
                             <Box sx={{ mb: 2 }}>
                                 <FormControl fullWidth>

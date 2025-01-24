@@ -1,10 +1,10 @@
 import React, { forwardRef, useContext, useEffect, useReducer, useRef, useState } from 'react'
-import { Container, Dialog, DialogActions, DialogContent, DialogTitle, DialogContentText, Tooltip, Chip, Stack, RadioGroup, FormLabel, FormControl, FormControlLabel, Radio, InputLabel, TextField, Stepper, Step, StepLabel, StepContent, Box, Paper, Input, Select, MenuItem, Slide, AppBar, Toolbar, IconButton, Card, CardContent, CardActions, Typography, Button, Alert } from '@mui/material';
+import { Container, Dialog, DialogActions, DialogContent, DialogTitle, DialogContentText, Tooltip, Chip, Stack, RadioGroup, FormLabel, FormControl, FormControlLabel, Radio, InputLabel, TextField, Stepper, Step, StepLabel, StepContent, Box, Paper, Input, Select, MenuItem, Slide, AppBar, Toolbar, IconButton, Card, CardContent, CardActions, Typography, Button, Alert, duration } from '@mui/material';
 import { AppContext, ClassContext, QuizContext, QuizResponseContext } from '../AppContext';
 import { Swiper, SwiperSlide, useSwiper } from 'swiper/react';
-import { collection, addDoc, query, getDoc, getDocs, where, doc, updateDoc } from "firebase/firestore"
+import { collection, addDoc, query, getDoc, getDocs, where, doc, updateDoc, setDoc } from "firebase/firestore"
 import './styles/quizView.css';
-import { db } from './Firebase';
+import { db, realdb } from './Firebase';
 // Import Swiper styles
 import 'swiper/css';
 import 'swiper/css/effect-cards';
@@ -18,10 +18,11 @@ import Essay from './QuizTypes/Essay';
 import MultiChoice from './QuizTypes/MultiChoice';
 import SingleChoice from './QuizTypes/SingleChoice';
 import MatchingType from './QuizTypes/MatchingType';
-import { getQuizScore, getQuizTotalPoints } from '../Utils';
+import { getQuizScore, getQuizTotalPoints, popMessage } from '../Utils';
 import { FileAttachment } from './QuizTypes/FileAttachment';
 import { FillInTheBlank } from './QuizTypes/FillInTheBlank';
 import { getDatabase, ref, set, onValue } from "firebase/database";
+import dayjs from 'dayjs';
 
 const Transition = forwardRef(function Transition(props, ref) {
     return <Slide direction="up" ref={ref} {...props} />;
@@ -34,7 +35,10 @@ export const QuizView = () => {
     const { setSnackbarOpen, setSnackbarMsg, currentUserData, setBackdropOpen } = useContext(AppContext);
     const { quizOpenDialog, setQuizOpenDialog, quizOpenData, setQuizOpenData } = useContext(QuizContext);
     const [activeQIndex, setActiveQIndex] = useState(0);
-
+    const [timer, setTimer] = useState('');
+    const [examDuration, SetExamDuration] = useState(0);
+    const [refEnd, setRefEnd] = useState(dayjs('January 23, 2025 11:20 pm'));
+    // console.log('refstart', refEnd.diff(dayjs(), 'day', false));
 
     const [quizQuiestions, dispatchQuestion] = useReducer((currentQuestions, action) => {
         if (action.type === 'setQuestions') {
@@ -96,16 +100,45 @@ export const QuizView = () => {
     useEffect(() => {
         let cheatLimits = cheatingAttempts;
         const openPanel = quizOpenDialog;
+        let timer;
+        if (quizOpenDialog) {
+            console.log('dialog opened');
+            getsertEndReference(db, dayjs().add(quizOpenData?.duration ?? 30, 'm').format('MMMM D, YYYY hh:mm a')).then(endRefGot => {
+                if (endRefGot) {
+                    setRefEnd(dayjs(endRefGot));
+                    console.log('date got', dayjs(endRefGot));
+
+                    console.log('set end time', dayjs(endRefGot).diff(dayjs(), 'ms', false));
+                    timer = setInterval(() => {
+                        let difference = dayjs(endRefGot).diff(dayjs(), 'ms', false);
+                        let days = Math.floor(difference / (1000 * 60 * 60 * 24));
+                        let hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                        let minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+                        let seconds = Math.floor((difference % (1000 * 60)) / 1000);
+                        let diftime = (hours <= 0 ? '0' : hours) + ':' + (minutes <= 0 ? '00' : minutes) + ':' + (seconds <= 0 ? '00' : seconds);
+                        setTimer(diftime);
+                        if (hours <= 0 && minutes <= 0 && seconds <= 0) {
+                            clearInterval(timer);
+                            console.log("Timer finished!");
+                            saveQuizResponse();
+                        }
+                    }, 1000);
+                } else {
+                    console.log('no endref got');
+
+                }
+            })
+
+        }
         const handleVisibilityChange = () => {
             if (document.hidden && quizOpenDialog) {
                 setCheatingAttempt(cheatLimits += 1);
                 console.log('cheating dialog', quizOpenDialog);
             }
-            console.log('cheating attempt ', document.hidden);
-
         };
         document.addEventListener("visibilitychange", handleVisibilityChange);
         return () => {
+            clearInterval(timer);
             document.removeEventListener("visibilitychange", handleVisibilityChange);
         };
     }, [quizOpenDialog]);
@@ -113,32 +146,11 @@ export const QuizView = () => {
     useEffect(() => {
         getQuestions();
         setActiveQIndex(0);
-        // startTimer(10);
         dispatchResponse({
             type: 'reset'
         });
         setCheatingAttempt(0);
     }, [quizOpenData]);
-    // const startTimer = (duration) => {
-    //     const timerRef = ref(realdb, "timer");
-    //     const endTime = Date.now() + duration * 1000;
-
-    //     // Store the end time in Firebase
-    //     set(timerRef, { endTime });
-
-    //     // Sync the timer updates in real-time
-    //     onValue(timerRef, (snapshot) => {
-    //         const data = snapshot.val();
-    //         if (data) {
-    //             const remaining = Math.max(0, Math.floor((data.endTime - Date.now()) / 1000));
-    //             console.log(`Time Remaining: ${remaining} seconds`);
-
-    //             if (remaining === 0) {
-    //                 console.log("Timer finished!");
-    //             }
-    //         }
-    //     });
-    // };
     const getQuestions = async () => {
         // const classRef = doc(db, 'classes', openedClass.classId);
         // const quizesRef = collection(classRef, 'quizes');
@@ -161,21 +173,47 @@ export const QuizView = () => {
             console.log(error);
         }
     }
+    const getsertEndReference = async (db, dateRef) => {
+        const newData = {
+            endRef: dateRef
+        }
+        try {
+            const docRef = doc(db, 'startedQuizzes', currentUserData.uid + '-' + quizOpenData.id);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                return docSnap.data().endRef;
+            } else {
+                await setDoc(docRef, newData);
+                return dateRef;
+            }
+        } catch (error) {
+            console.log(error);
+            return null;
+        }
+    };
     const saveQuizResponse = () => {
         const responseRef = collection(db, 'QuizResponses');
         setBackdropOpen(false);
         try {
-            const finalData = { ...quizResponse };
+            const finalData = {
+                ...quizResponse,
+                category: quizOpenData.category,
+                quizId: quizOpenData.id,
+                uid: currentUserData.uid,
+                classId: openedClass.classId,
+            };
             finalData.score = getQuizScore(finalData.questionResponse);
             finalData.totalScore = getQuizTotalPoints(quizQuiestions);
             const saveResult = addDoc(responseRef, finalData);
             // console.log('finaldata', finalData);
-            setSnackbarMsg('Your response has been saved');
-            setSnackbarMsg(true);
+            popMessage('', 'Your response has been saved');
+            // setSnackbarMsg(true);
             setQuizOpenDialog(false);
 
         } catch (error) {
             console.log('error', quizResponse);
+            console.log('errorQuizData', quizOpenData);
+
             console.log(error);
             setSnackbarMsg(error.message);
             setSnackbarOpen(true);
@@ -270,6 +308,15 @@ export const QuizView = () => {
                                 aria-label="close">
                                 <md-icon>arrow_back</md-icon>
                             </IconButton>
+                            <Typography sx={{ color: '#000', ml: 2, flex: 1, fontFamily: 'Open Sans' }} variant="h6" component="div">
+
+                            </Typography>
+                            <Typography
+                                component="span"
+                                variant="body"
+                                sx={{ color: 'text.primary', display: 'inline' }}>
+                                Time remaining: {timer}
+                            </Typography>
                         </Toolbar>
 
                     </AppBar>

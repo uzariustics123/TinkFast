@@ -63,7 +63,7 @@ const ClassRemarks = (props) => {
             const classQuery = query(quizRef,
                 where('classId', '==', openedClass.id),
                 where('status', '==', 'publish'),
-                where('period', '==', periods[curtab])
+                // where('period', '==', periods[curtab])
             );
             const queryResult = await getDocs(classQuery);
             console.log('query result: ' + queryResult);
@@ -195,7 +195,7 @@ const ClassRemarks = (props) => {
                 { field: 'score', headerName: 'Score', type: 'Number', width: 100 },
                 { field: 'totalScore', headerName: 'Total Score', type: 'Number', width: 120 },
                 { field: 'percentage', headerName: 'Score Percentage', type: 'Number', width: 200 },
-                { field: 'avg', headerName: '', width: 100 },
+                // { field: 'avg', headerName: '', width: 100 },
             ],
             xrow: [
                 ...value['quiz'].map(item => ({
@@ -206,7 +206,6 @@ const ClassRemarks = (props) => {
                     score: item.answered ? item.score : '--',
                     totalScore: item.answered ? item.totalScore : '--',
                     percentage: item.answered ? item.percentage : '--',
-                    avg: '',
                 })),
                 ...value['exam'].map(item => ({
                     category: 'exam',
@@ -216,7 +215,6 @@ const ClassRemarks = (props) => {
                     score: item.answered ? item.score : '--',
                     totalScore: item.answered ? item.totalScore : '--',
                     percentage: item.answered ? item.percentage.toPrecision(2) : '--',
-                    avg: '',
                 })),
                 ...value['performance task'].map(item => ({
                     category: 'performance task',
@@ -226,18 +224,7 @@ const ClassRemarks = (props) => {
                     score: item.answered ? item.score : '--',
                     totalScore: item.answered ? item.totalScore : '--',
                     percentage: item.answered ? item.percentage.toPrecision(2) : '--',
-                    avg: '',
                 })),
-                {
-                    category: '',
-                    id: '',
-                    title: '',
-                    answered: '',
-                    score: '',
-                    totalScore: '',
-                    percentage: '',
-                    avg: 23,
-                }
             ],
             linechartx:
                 [
@@ -253,9 +240,12 @@ const ClassRemarks = (props) => {
                         ...value['performance task']?.map(item => (item.percentage))
                     ], label: 'Scoring Percentage', color: colors.blue[500], area: false,
                 },
-                // { data: [...value['exam']?.map(item => (item.percentage))], label: 'Exams', color: colors.yellow[900], area: true, },
-                // { data: [...value['performance task']?.map(item => (item.percentage))], label: 'PTs', color: colors.blue[900], area: true, },
-            ]
+            ],
+            actsTaken: [
+                ...value['quiz'],
+                ...value['exam'],
+                ...value['performance task']
+            ].filter(item => item.answered).length
         }
         setCurrReportViewData(data);
         console.log('vals:', data);
@@ -266,16 +256,42 @@ const ClassRemarks = (props) => {
     }
     const xcolumns = () => {
         let ctgs = {
-            'quiz': 1,
-            'performance task': 1,
-            'exam': 1
+            'prelim': {
+                'quiz': 1,
+                'performance task': 1,
+                'exam': 1
+            },
+            'midterm': {
+                'quiz': 1,
+                'performance task': 1,
+                'exam': 1
+            },
+            'finals': {
+                'quiz': 1,
+                'performance task': 1,
+                'exam': 1
+            }
         }
         const xgridColumn = [
             { field: 'studentID', headerName: 'ID number', width: 100 },
             { field: 'name', headerName: 'Name', width: 200 },
-            ...[...acts.quizes, ...acts.pt, ...acts.exams].map((quiz, index) => ({
+            ...[...acts.quizes, ...acts.pt, ...acts.exams].filter(item => item.period == 'prelim').map((quiz, index) => ({
                 field: quiz.id.toString(),
-                headerName: (quiz.category == 'quiz' ? 'Quiz ' : quiz.category == 'performance task' ? 'PT ' : quiz.category == 'exam' ? 'Exam ' : '') + ctgs[quiz.category]++,
+                headerName: (quiz.category == 'quiz' ? 'Quiz ' : quiz.category == 'performance task' ? 'PT ' : quiz.category == 'exam' ? 'Exam ' : '') + ctgs[quiz.period][quiz.category]++,
+                width: quiz.category == 'performance task' ? 200 : 70,
+                editable: false,
+                description: quiz.title + ' - ' + quiz.description,
+            })),
+            ...[...acts.quizes, ...acts.pt, ...acts.exams].filter(item => item.period == 'midterm').map((quiz, index) => ({
+                field: quiz.id.toString(),
+                headerName: (quiz.category == 'quiz' ? 'Quiz ' : quiz.category == 'performance task' ? 'PT ' : quiz.category == 'exam' ? 'Exam ' : '') + ctgs[quiz.period][quiz.category]++,
+                width: quiz.category == 'performance task' ? 200 : 70,
+                editable: false,
+                description: quiz.title + ' - ' + quiz.description,
+            })),
+            ...[...acts.quizes, ...acts.pt, ...acts.exams].filter(item => item.period == 'finals').map((quiz, index) => ({
+                field: quiz.id.toString(),
+                headerName: (quiz.category == 'quiz' ? 'Quiz ' : quiz.category == 'performance task' ? 'PT ' : quiz.category == 'exam' ? 'Exam ' : '') + ctgs[quiz.period][quiz.category]++,
                 width: quiz.category == 'performance task' ? 200 : 70,
                 editable: false,
                 description: quiz.title + ' - ' + quiz.description,
@@ -304,8 +320,38 @@ const ClassRemarks = (props) => {
         if (openedClass.classRole == 'teacher') {
             xgridColumn.push(
                 {
+                    field: 'gradePrelim',
+                    headerName: 'Prelim',
+                    renderCell: renderProgress,
+                    renderEditCell: renderEditProgress,
+                    width: 100,
+                    editable: false,
+                },
+            );
+            xgridColumn.push(
+                {
+                    field: 'gradeMidterm',
+                    headerName: 'Midterm',
+                    renderCell: renderProgress,
+                    renderEditCell: renderEditProgress,
+                    width: 100,
+                    editable: false,
+                },
+            );
+            xgridColumn.push(
+                {
+                    field: 'gradeFinals',
+                    headerName: 'Finals',
+                    renderCell: renderProgress,
+                    renderEditCell: renderEditProgress,
+                    width: 100,
+                    editable: false,
+                },
+            );
+            xgridColumn.push(
+                {
                     field: 'grade',
-                    headerName: 'Grade',
+                    headerName: 'Final Grade',
                     renderCell: renderProgress,
                     renderEditCell: renderEditProgress,
                     width: 100,
@@ -339,12 +385,46 @@ const ClassRemarks = (props) => {
             let rowSheet = {};
             let gainedScore = 0;
             let totalScore = 0;
-            let ptScorePercentage = 0;
-            let ptTotalItems = 0;
-            let examScorePercentage = 0;
-            let examTotalItems = 0;
-            let quizScorePercentage = 0;
-            let quizTotalItems = 0;
+            let ptScorePercentage = {
+                'prelim': 0,
+                'midterm': 0,
+                'finals': 0,
+            };
+            let ptTotalItems = {
+                'prelim': 0,
+                'midterm': 0,
+                'finals': 0,
+            };
+            let examScorePercentage = {
+                'prelim': 0,
+                'midterm': 0,
+                'finals': 0,
+            };
+            let examTotalItems = {
+                'prelim': 0,
+                'midterm': 0,
+                'finals': 0,
+            };
+            let quizScorePercentage = {
+                'prelim': 0,
+                'midterm': 0,
+                'finals': 0,
+            };
+            let quizTotalItems = {
+                'prelim': 0,
+                'midterm': 0,
+                'finals': 0,
+            };
+            let gradeData = {
+                'prelim': [],
+                'midterm': [],
+                'finals': [],
+            };
+            let actsPerPeriod = {
+                'prelim': [],
+                'midterm': [],
+                'finals': [],
+            };
             const rowData = {
                 id: row.uid,
                 studentID: row.studentID,
@@ -376,8 +456,8 @@ const ClassRemarks = (props) => {
                 if (response) {
                     switch (quiz.category) {
                         case 'performance task':
-                            ptScorePercentage += (response.score / response.totalScore) * 100;
-                            ptTotalItems += 1;
+                            ptScorePercentage[quiz.period] += (response.score / response.totalScore) * 100;
+                            ptTotalItems[quiz.period] += 1;
                             initialPersonResponse = {
                                 id: quiz.id,
                                 title: quiz.title,
@@ -388,8 +468,8 @@ const ClassRemarks = (props) => {
                             }
                             break;
                         case 'exam':
-                            examScorePercentage += (response.score / response.totalScore) * 100;
-                            examTotalItems += 1;
+                            examScorePercentage[quiz.period] += (response.score / response.totalScore) * 100;
+                            examTotalItems[quiz.period] += 1;
                             initialPersonResponse = {
                                 id: quiz.id,
                                 title: quiz.title,
@@ -400,8 +480,8 @@ const ClassRemarks = (props) => {
                             }
                             break;
                         case 'quiz':
-                            quizScorePercentage += (response.score / response.totalScore) * 100;
-                            quizTotalItems += 1;
+                            quizScorePercentage[quiz.period] += (response.score / response.totalScore) * 100;
+                            quizTotalItems[quiz.period] += 1;
                             initialPersonResponse = {
                                 id: quiz.id,
                                 title: quiz.title,
@@ -424,18 +504,28 @@ const ClassRemarks = (props) => {
             // console.log('pt: ', ptScorePercentage, '/', ptTotalItems, '=', ptScorePercentage / ptTotalItems);
             // console.log('exam: ', examScorePercentage, '/', examTotalItems);
             // console.log('quiz:', quizScorePercentage, '/', quizTotalItems);
-            let ptGrade = ptTotalItems > 0 ? (ptScorePercentage / ptTotalItems) * categoryWeights.performanceTask : 0;
-            let examGrade = examTotalItems > 0 ? (examScorePercentage / examTotalItems) * categoryWeights.exam : 0;
-            let quizGrade = quizTotalItems > 0 ? (quizScorePercentage / quizTotalItems) * categoryWeights.quiz : 0;
+            let ptGradePrelim = ptTotalItems['prelim'] > 0 ? (ptScorePercentage['prelim'] / ptTotalItems['prelim']) * categoryWeights.performanceTask : 0;
+            let ptGradeMidterm = ptTotalItems['midterm'] > 0 ? (ptScorePercentage['midterm'] / ptTotalItems['midterm']) * categoryWeights.performanceTask : 0;
+            let ptGradeFinal = ptTotalItems['finals'] > 0 ? (ptScorePercentage['finals'] / ptTotalItems['finals']) * categoryWeights.performanceTask : 0;
+            let examGradePrelim = examTotalItems['prelim'] > 0 ? (examScorePercentage['prelim'] / examTotalItems['prelim']) * categoryWeights.exam : 0;
+            let examGradeMidterm = examTotalItems['midterm'] > 0 ? (examScorePercentage['midterm'] / examTotalItems['midterm']) * categoryWeights.exam : 0;
+            let examGradeFinal = examTotalItems['finals'] > 0 ? (examScorePercentage['finals'] / examTotalItems['finals']) * categoryWeights.exam : 0;
+            let quizGradePrelim = quizTotalItems['prelim'] > 0 ? (quizScorePercentage['prelim'] / quizTotalItems['prelim']) * categoryWeights.quiz : 0;
+            let quizGradeMidterm = quizTotalItems['midterm'] > 0 ? (quizScorePercentage['midterm'] / quizTotalItems['midterm']) * categoryWeights.quiz : 0;
+            let quizGradeFinal = quizTotalItems['finals'] > 0 ? (quizScorePercentage['finals'] / quizTotalItems['finals']) * categoryWeights.quiz : 0;
 
-            console.log('pt grade:', ptGrade);
-            console.log('exam grade:', examGrade);
-            console.log('quiz grade:', quizGrade);
-            let finalGrade = Math.round(ptGrade + examGrade + quizGrade);
+            let gradePrelim = Math.round(ptGradePrelim + examGradePrelim + quizGradePrelim);
+            let gradeMidterm = Math.round(ptGradeMidterm + examGradeMidterm + quizGradeMidterm);
+            let gradeFinal = Math.round(ptGradeFinal + examGradeFinal + quizGradeFinal);
+
+            let finalGrade = ((gradeMidterm * .5) + (gradeFinal * .5));
             rowData.grade = finalGrade;
-            rowData.perfdetails.ptGrade = ptGrade;
-            rowData.perfdetails.examGrade = examGrade;
-            rowData.perfdetails.quizGrade = quizGrade;
+            rowData.perfdetails.gradePrelim = gradePrelim;
+            rowData.perfdetails.gradeMidterm = gradeMidterm;
+            rowData.perfdetails.gradeFinal = gradeFinal;
+            rowData.gradePrelim = gradePrelim;
+            rowData.gradeMidterm = gradeMidterm;
+            rowData.gradeFinals = gradeFinal;
             rowData.perfdetails.grade = finalGrade;
             if (finalGrade >= 90) {
                 rowData.gradeIndicator = 'Outstanding';
@@ -473,27 +563,90 @@ const ClassRemarks = (props) => {
             groupId: 'Activities',
             children: [
                 {
-                    groupId: 'Quizzes',
+                    groupId: 'Prelim',
                     children: [
-                        ...acts.quizes.map((quiz) => ({
-                            field: quiz.id.toString()
-                        })),
+                        {
+                            groupId: 'Quizzes',
+                            children: [
+                                ...acts.quizes.filter(item => item.period == 'prelim').map((quiz) => ({
+                                    field: quiz.id.toString()
+                                })),
+                            ]
+                        },
+                        {
+                            groupId: 'Performance Tasks',
+                            children: [
+                                ...acts.pt.filter(item => item.period == 'prelim').map((quiz) => ({
+                                    field: quiz.id.toString()
+                                })),
+                            ]
+                        },
+                        {
+                            groupId: 'Exams',
+                            children: [
+                                ...acts.exams.filter(item => item.period == 'prelim').map((quiz) => ({
+                                    field: quiz.id.toString()
+                                })),
+                            ]
+                        },
                     ]
                 },
                 {
-                    groupId: 'Performance Tasks',
+                    groupId: 'Midterm',
                     children: [
-                        ...acts.pt.map((quiz) => ({
-                            field: quiz.id.toString()
-                        })),
+                        {
+                            groupId: 'Quizzes',
+                            children: [
+                                ...acts.quizes.filter(item => item.period == 'midterm').map((quiz) => ({
+                                    field: quiz.id.toString()
+                                })),
+                            ]
+                        },
+                        {
+                            groupId: 'Performance Tasks',
+                            children: [
+                                ...acts.pt.filter(item => item.period == 'midterm').map((quiz) => ({
+                                    field: quiz.id.toString()
+                                })),
+                            ]
+                        },
+                        {
+                            groupId: 'Exams',
+                            children: [
+                                ...acts.exams.filter(item => item.period == 'midterm').map((quiz) => ({
+                                    field: quiz.id.toString()
+                                })),
+                            ]
+                        },
                     ]
                 },
                 {
-                    groupId: 'Exams',
+                    groupId: 'Finals',
                     children: [
-                        ...acts.exams.map((quiz) => ({
-                            field: quiz.id.toString()
-                        })),
+                        {
+                            groupId: 'Quizzes',
+                            children: [
+                                ...acts.quizes.filter(item => item.period == 'finals').map((quiz) => ({
+                                    field: quiz.id.toString()
+                                })),
+                            ]
+                        },
+                        {
+                            groupId: 'Performance Tasks',
+                            children: [
+                                ...acts.pt.filter(item => item.period == 'finals').map((quiz) => ({
+                                    field: quiz.id.toString()
+                                })),
+                            ]
+                        },
+                        {
+                            groupId: 'Exams',
+                            children: [
+                                ...acts.exams.filter(item => item.period == 'finals').map((quiz) => ({
+                                    field: quiz.id.toString()
+                                })),
+                            ]
+                        },
                     ]
                 },
             ],
@@ -506,10 +659,13 @@ const ClassRemarks = (props) => {
             ]
         },
         {
-            groupId: 'Rating',
+            groupId: 'Grading',
             children: [
-                { field: 'grade' },
                 { field: 'gradeIndicator' },
+                { field: 'gradePrelim' },
+                { field: 'gradeMidterm' },
+                { field: 'gradeFinals' },
+                { field: 'grade' },
             ]
         },
     ];
@@ -650,11 +806,11 @@ const ClassRemarks = (props) => {
     };
     return (
         <>
-            <Tabs value={curtab} onChange={handleTabChange} centered>
+            {/* <Tabs value={curtab} onChange={handleTabChange} centered>
                 <Tab label="Prelim" />
                 <Tab label="Midterm" />
                 <Tab label="Finals" />
-            </Tabs>
+            </Tabs> */}
             {/* <Box sx={{ width: '100%', alignContent: 'end' }}>
                 <Chip
                     sx={{ float: 'right', m: 1 }}
@@ -683,6 +839,9 @@ const ClassRemarks = (props) => {
                 // checkboxSelection
                 disableSelectionOnClick
                 disableColumnSelector
+                initialState={{
+                    density: 'compact', // Set density to compact by default
+                }}
                 // rowHeight={25}
                 columnGroupingModel={xcolumnGroupingModel}
                 slots={{
@@ -732,7 +891,7 @@ const ClassRemarks = (props) => {
                                     data: [
                                         { id: 0, value: (currReportViewData?.categoryWeights?.performanceTask ?? 0) * 100, label: `Performance task = ${(currReportViewData?.categoryWeights?.performanceTask * 100)}%` },
                                         { id: 1, value: (currReportViewData?.categoryWeights?.exam ?? 0) * 100, label: `Exam = ${(currReportViewData?.categoryWeights?.exam * 100)}%` },
-                                        { id: 2, value: (currReportViewData?.categoryWeights?.quiz ?? 0) * 100, label: `Performance task = ${(currReportViewData?.categoryWeights?.performanceTask * 100)}%` },
+                                        { id: 2, value: (currReportViewData?.categoryWeights?.quiz ?? 0) * 100, label: `Quiz = ${(currReportViewData?.categoryWeights?.performanceTask * 100)}%` },
                                     ],
                                     cornerRadius: 5,
                                     innerRadius: 20,
@@ -747,11 +906,11 @@ const ClassRemarks = (props) => {
                                 variant="display"
                                 sx={{ color: 'text.seconday' }} >
                                 <strong>Grades:</strong><br />
-                                Performance Task:&nbsp;<span><strong>{currReportViewData.ptGrade?.toPrecision(2)}</strong> / {(currReportViewData?.categoryWeights?.performanceTask * 100)}</span>
+                                Prelim:&nbsp;<span><strong>{currReportViewData.gradePrelim?.toPrecision(2)}</strong> </span>
                                 <br />
-                                Quizzes:&nbsp;<span><strong>{currReportViewData.quizGrade?.toPrecision(2)}</strong> / {(currReportViewData?.categoryWeights?.quiz * 100)}</span>
+                                Midterm:&nbsp;<span><strong>{currReportViewData.gradeMidterm?.toPrecision(2)}</strong> </span>
                                 <br />
-                                Exams:&nbsp;<span><strong>{currReportViewData.examGrade?.toPrecision(2)} </strong>/ {(currReportViewData?.categoryWeights?.exam * 100)}</span>
+                                Finals:&nbsp;<span><strong>{currReportViewData.gradeFinal?.toPrecision(2)} </strong> </span>
                                 <br />
                                 Final Grade:&nbsp;<span><strong style={{ fontSize: '18px' }}>{currReportViewData.grade}</strong></span>
                             </Typography>
@@ -848,6 +1007,6 @@ const statusChip = (props) => {
         }
         chipProp.icon = < span style={{ color: colors.red[800] }} className="material-symbols-rounded" > sentiment_very_dissatisfied</span >
     }
-    return <Chip variant='outlined' style={{ ...chipStyle }} label={label} {...chipProp}></Chip >
+    return <Chip variant='outlined' size='small' style={{ ...chipStyle }} label={label} {...chipProp}></Chip >
 }
 

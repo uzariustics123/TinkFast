@@ -162,8 +162,10 @@ function QuizesList() {
     }
     const startQuiz = (quizItem) => {
         console.log('open', quizOpenDialog);
-        setQuizOpenDialog(true);
-        setQuizOpenData(quizItem);
+        if (confirm(`Heads up! before starting this quiz it's import make yourself ready as you only have limited time to complete this quiz. Do you want to proceed?`)) {
+            setQuizOpenDialog(true);
+            setQuizOpenData(quizItem);
+        }
     }
     const editQuiz = (quizItem) => {
         console.log('to edit quiz', quizItem);
@@ -200,6 +202,24 @@ function QuizesList() {
         setActivityToReview(activityItem);
         setOpenReviewActivityDialog(true);
     }
+    const getsertEndReference = async (db, dateRef) => {
+        const newData = {
+            endRef: dateRef
+        }
+        try {
+            const docRef = doc(db, 'startedQuizzes', currentUserData.uid + '-' + quizOpenData.id);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                return docSnap.data().endRef;
+            } else {
+                await setDoc(docRef, newData);
+                return dateRef;
+            }
+        } catch (error) {
+            console.log(error);
+            return null;
+        }
+    };
     return (
         <>
             <QuizContext.Provider value={{
@@ -244,8 +264,8 @@ function QuizesList() {
                         {quizes.map((item, index) => {
                             let responded = false;
                             const startActProps = {};
-                            console.log('startdate', item.expectedStartDateTime);
-                            console.log('enddate', item.expectedEndDateTime);
+                            // console.log('startdate', item.expectedStartDateTime);
+                            // console.log('enddate', item.expectedEndDateTime);
 
                             startActProps.disabled = dayjs() < dayjs(item.expectedStartDateTime) || (item.expectedEndDateTime != '' && dayjs() > dayjs(item.expectedEndDateTime));
                             const foundResponse = responses.find(response => response.quizId == item.id);

@@ -4,6 +4,7 @@ import { collection, doc, getDocs, query, updateDoc, where } from 'firebase/fire
 import { db } from './Firebase';
 import { AppContext, ClassContext, QuizContext } from '../AppContext';
 import { calculatePoints, calculateQuestionTotalPoints, getQuestionScore } from '../Utils';
+import dayjs from 'dayjs';
 
 const xTransition = forwardRef(function Transition(props, ref) {
     return <Slide direction="left" ref={ref} {...props} />;
@@ -121,6 +122,20 @@ export const ActivityReviewDialog = (props) => {
                     </Box>}
                 </AppBar>
                 <Box sx={{ m: 2 }}>
+                    <Typography
+                        component="span"
+                        variant="body2"
+                        sx={{ color: 'text.primary', display: 'inline' }}>
+                        Quiz Taken: <Chip color={userResponse?.takenStatus == 'On Time' ? 'success' : userResponse?.takenStatus == 'Late' ? 'warning' : 'error'} size='small' variant='outlined' label={userResponse?.takenStatus ?? 'Unknown'} />
+                        <br />
+                        At: <Chip size='small' label={userResponse?.timestampstart ?? ''} />
+                        <br />
+                        Ends at: <Chip size='small' label={userResponse?.timestampend ?? ''} />
+                        <br />
+                        With a duration of: <Chip size='small' label={(dayjs(userResponse?.timestampend).diff(dayjs(userResponse?.timestampstart), 'm', true))?.toPrecision(2) + ' mins'} />
+                    </Typography>
+                    <br />
+                    <br />
                     <Typography
                         component="span"
                         variant="body"

@@ -955,7 +955,9 @@ function AddQuizDialog(props) {
                     fullScreen
                     open={openDialog}
                     onClose={() => { }}
-                    TransitionComponent={Transition}
+                    slots={{
+                        transition: Transition
+                    }}
                 >
                     <AppBar sx={{ borderRadius: '25px', marginTop: '.2rem', backgroundColor: 'white', position: 'sticky', boxShadow: '0 0 5px rgba(0,0,0,.3)' }}>
                         <Toolbar>

@@ -2,7 +2,7 @@ import React, { forwardRef, useContext, useEffect, useReducer, useRef, useState 
 import { Container, Dialog, DialogActions, DialogContent, DialogTitle, DialogContentText, Tooltip, Chip, Stack, RadioGroup, FormLabel, FormControl, FormControlLabel, Radio, InputLabel, TextField, Stepper, Step, StepLabel, StepContent, Box, Paper, Input, Select, MenuItem, Slide, AppBar, Toolbar, IconButton, Card, CardContent, CardActions, Typography, Button, Alert, duration } from '@mui/material';
 import { AppContext, ClassContext, QuizContext, QuizResponseContext } from '../AppContext';
 import { Swiper, SwiperSlide, useSwiper } from 'swiper/react';
-import { collection, addDoc, query, getDoc, getDocs, where, doc, updateDoc, setDoc } from "firebase/firestore"
+import { collection, addDoc, query, getDoc, getDocs, where, doc, updateDoc, setDoc, limit } from "firebase/firestore"
 import './styles/quizView.css';
 import { db, realdb } from './Firebase';
 // Import Swiper styles
@@ -38,6 +38,8 @@ export const QuizView = () => {
     const [timer, setTimer] = useState('');
     const [examDuration, SetExamDuration] = useState(0);
     const [refEnd, setRefEnd] = useState(dayjs('January 23, 2025 11:20 pm'));
+    const datetimestart = useRef(null);
+    const datetimeend = useRef(null);
     // console.log('refstart', refEnd.diff(dayjs(), 'day', false));
 
     const [quizQuiestions, dispatchQuestion] = useReducer((currentQuestions, action) => {
@@ -74,6 +76,7 @@ export const QuizView = () => {
                 const resetData = {
                     score: 0,
                     status: 'partial',
+                    takenStatus: 'On Time',
                     category: quizOpenData.category,
                     quizId: quizOpenData.id,
                     uid: currentUserData.uid,
@@ -89,6 +92,7 @@ export const QuizView = () => {
     }, {
         score: 0,
         status: 'partial',
+        takenStatus: 'On Time',
         category: 'quiz',
         uid: currentUserData.uid,
         classId: openedClass.classId,
@@ -103,11 +107,12 @@ export const QuizView = () => {
         let timer;
         if (quizOpenDialog) {
             console.log('dialog opened');
-            getsertEndReference(db, dayjs().add(quizOpenData?.duration ?? 30, 'm').format('MMMM D, YYYY hh:mm a')).then(endRefGot => {
+            getsertEndReference(db, dayjs().add(quizOpenData?.duration ?? 30, 'm')).then(endRefGot => {
                 if (endRefGot) {
                     setRefEnd(dayjs(endRefGot));
                     console.log('date got', dayjs(endRefGot));
-
+                    let timestampnow = dayjs().format('MMMM D, YYYY hh:mm:ss a');
+                    datetimestart.current = timestampnow;
                     console.log('set end time', dayjs(endRefGot).diff(dayjs(), 'ms', false));
                     timer = setInterval(() => {
                         let difference = dayjs(endRefGot).diff(dayjs(), 'ms', false);
@@ -119,6 +124,8 @@ export const QuizView = () => {
                         setTimer(diftime);
                         if (hours <= 0 && minutes <= 0 && seconds <= 0) {
                             clearInterval(timer);
+                            if (quizOpenData?.takenStatus !== 'Late')
+                                setQuizOpenData({ ...quizOpenData, takenStatus: 'Unfinished' });
                             console.log("Timer finished!");
                             saveQuizResponse();
                         }
@@ -175,19 +182,39 @@ export const QuizView = () => {
     }
     const getsertEndReference = async (db, dateRef) => {
         const newData = {
-            endRef: dateRef
+            endRef: dateRef.format('MMMM D, YYYY hh:mm:ss a'),
+            uid: currentUserData.uid,
+            activityId: quizOpenData.id,
+            timestamp: dayjs(dateRef).subtract(quizOpenData.duration, 'm').format('MMMM D, YYYY hh:mm:ss a'),
         }
         try {
-            const docRef = doc(db, 'startedQuizzes', currentUserData.uid + '-' + quizOpenData.id);
-            const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) {
-                return docSnap.data().endRef;
+            // const docRef = doc(db, 'startedQuizzes', currentUserData.uid + '-' + quizOpenData.id);
+            const responseRef = collection(db, "startedQuizzes"); // Reference to "users" collection
+            const q = query(responseRef, where('uid', '==', currentUserData.uid), where('activityId', '==', quizOpenData.id), limit(1));
+            // const queried = query(docRef, where('uid', '==', currentUserData.uid), where('activityId', '==', quizOpenData.id))
+            // const docSnap = await getDoc(docRef);
+            const querySnapshot = await getDocs(q); // Fetch matching document
+            if (!querySnapshot.empty) {
+                const reponseDoc = querySnapshot.docs[0].data(); // Get the first document
+                console.log('ref sucessfully retrieved');
+                console.log('ref:', reponseDoc.endRef);
+
+                return reponseDoc.endRef;
             } else {
-                await setDoc(docRef, newData);
+                console.log('no ref adding...');
+
+                await addDoc(responseRef, newData);
                 return dateRef;
             }
+            // if (docSnap.exists()) {
+            //     return docSnap.data().endRef;
+            // } else {
+            //     const responseDoc = doc(responseRef,);
+            //     await setDoc(docRef, newData);
+            //     return dateRef;
+            // }
         } catch (error) {
-            console.log(error);
+            console.log('error time ref', error);
             return null;
         }
     };
@@ -201,6 +228,9 @@ export const QuizView = () => {
                 quizId: quizOpenData.id,
                 uid: currentUserData.uid,
                 classId: openedClass.classId,
+                takenStatus: quizOpenData.takenStatus,
+                timestampstart: datetimestart.current,
+                timestampend: dayjs().format('MMMM D, YYYY hh:mm:ss a'),
             };
             finalData.score = getQuizScore(finalData.questionResponse);
             finalData.totalScore = getQuizTotalPoints(quizQuiestions);

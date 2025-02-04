@@ -195,6 +195,9 @@ const ClassRemarks = (props) => {
                 { field: 'score', headerName: 'Score', type: 'Number', width: 100 },
                 { field: 'totalScore', headerName: 'Total Score', type: 'Number', width: 120 },
                 { field: 'percentage', headerName: 'Score Percentage', type: 'Number', width: 200 },
+                { field: 'takenStatus', headerName: 'Taken', width: 200 },
+                { field: 'timestampstart', headerName: 'Taken at', width: 200 },
+                { field: 'timestampend', headerName: 'Ended at', width: 200 },
                 // { field: 'avg', headerName: '', width: 100 },
             ],
             xrow: [
@@ -206,6 +209,9 @@ const ClassRemarks = (props) => {
                     score: item.answered ? item.score : '--',
                     totalScore: item.answered ? item.totalScore : '--',
                     percentage: item.answered ? item.percentage : '--',
+                    takenStatus: item?.takenStatus,
+                    timestampstart: item?.timestampstart,
+                    timestampend: item?.timestampend,
                 })),
                 ...value['exam'].map(item => ({
                     category: 'exam',
@@ -215,6 +221,9 @@ const ClassRemarks = (props) => {
                     score: item.answered ? item.score : '--',
                     totalScore: item.answered ? item.totalScore : '--',
                     percentage: item.answered ? item.percentage.toPrecision(2) : '--',
+                    takenStatus: item?.takenStatus,
+                    timestampstart: item?.timestampstart,
+                    timestampend: item?.timestampend,
                 })),
                 ...value['performance task'].map(item => ({
                     category: 'performance task',
@@ -224,6 +233,9 @@ const ClassRemarks = (props) => {
                     score: item.answered ? item.score : '--',
                     totalScore: item.answered ? item.totalScore : '--',
                     percentage: item.answered ? item.percentage.toPrecision(2) : '--',
+                    takenStatus: item?.takenStatus,
+                    timestampstart: item?.timestampstart,
+                    timestampend: item?.timestampend,
                 })),
             ],
             linechartx:
@@ -451,7 +463,10 @@ const ClassRemarks = (props) => {
                     score: 0,
                     totalScore: 0,
                     answered: false,
-                    percentage: 0
+                    percentage: 0,
+                    takenStatus: '- -',
+                    timestampstart: '- -',
+                    timestampend: '- -',
                 }
                 if (response) {
                     switch (quiz.category) {
@@ -464,7 +479,10 @@ const ClassRemarks = (props) => {
                                 score: response.score,
                                 totalScore: response.totalScore,
                                 answered: true,
-                                percentage: (response.score / response.totalScore) * 100
+                                percentage: (response.score / response.totalScore) * 100,
+                                takenStatus: response.takenStatus,
+                                timestampstart: response.timestampstart,
+                                timestampend: response.timestampend,
                             }
                             break;
                         case 'exam':
@@ -476,7 +494,10 @@ const ClassRemarks = (props) => {
                                 score: response.score,
                                 totalScore: response.totalScore,
                                 answered: true,
-                                percentage: (response.score / response.totalScore) * 100
+                                percentage: (response.score / response.totalScore) * 100,
+                                takenStatus: response.takenStatus,
+                                timestampstart: response.timestampstart,
+                                timestampend: response.timestampend,
                             }
                             break;
                         case 'quiz':
@@ -488,7 +509,10 @@ const ClassRemarks = (props) => {
                                 score: response.score,
                                 totalScore: response.totalScore,
                                 answered: true,
-                                percentage: (response.score / response.totalScore) * 100
+                                percentage: (response.score / response.totalScore) * 100,
+                                takenStatus: response.takenStatus,
+                                timestampstart: response.timestampstart,
+                                timestampend: response.timestampend,
                             }
                             break;
                         default:

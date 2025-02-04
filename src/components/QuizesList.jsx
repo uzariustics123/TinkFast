@@ -73,38 +73,6 @@ function QuizesList() {
             console.log(error);
         }
     }
-    // const getMidtermQuizes = async () => {
-    //     const classRef = doc(db, 'classes', openedClass.classId);
-    //     const quizRef = collection(db, 'quizes');
-    //     const filteredQuery = query(quizRef, where('period', '==', 'midterm'), where('classId', '==', openedClass.classId));
-    //     try {
-    //         const querySnapshot = await getDocs(filteredQuery);
-    //         const quizList = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-    //         dispathQuizes({
-    //             type: 'setQuizes',
-    //             data: quizList
-    //         });
-    //         // console.log('quiz list', quizList);
-    //     } catch (error) {
-    //         console.log(error);
-    //     }
-    // }
-    // const getFinalsQuizes = async () => {
-    //     const classRef = doc(db, 'classes', openedClass.classId);
-    //     const quizRef = collection(db, 'quizes');
-    //     const filteredQuery = query(quizRef, where('period', '==', 'final'), where('classId', '==', openedClass.classId));
-    //     try {
-    //         const querySnapshot = await getDocs(filteredQuery);
-    //         const quizList = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-    //         dispathQuizes({
-    //             type: 'setQuizes',
-    //             data: quizList
-    //         });
-    //         // console.log('quiz list', quizList);
-    //     } catch (error) {
-    //         console.log(error);
-    //     }
-    // }
     const handleTabChange = (index) => {
         if (index == 0)
             period.current = 'prelim';
@@ -135,11 +103,10 @@ function QuizesList() {
             setSnackbarOpen(true);
             setSnackbarMsg(error.message);
             console.log(error);
-
         }
     }
     const handleArchive = async (quizItem) => {
-        if (confirm('Are you sure you want to archive this item? This will no longer be visible in your class unless reactivated by Admin'))
+        if (confirm('Are you sure? you want to archive this item? This will no longer be visible in your class unless reactivated by Admin'))
             try {
                 let foundItem = quizes.find(item => item.id === quizItem.id);
                 console.log('found item', foundItem);
@@ -160,10 +127,17 @@ function QuizesList() {
                 console.log(error);
             }
     }
-    const startQuiz = (quizItem) => {
+    const startQuiz = (quizItem, isLate) => {
+        if (isLate) {
+            quizItem.takenStatus = 'Late';
+        } else {
+            quizItem.takenStatus = 'On Time';
+        }
         console.log('open', quizOpenDialog);
         if (confirm(`Heads up! before starting this quiz it's import make yourself ready as you only have limited time to complete this quiz. Do you want to proceed?`)) {
             setQuizOpenDialog(true);
+            console.log('takenstats', quizItem);
+
             setQuizOpenData(quizItem);
         }
     }
@@ -263,11 +237,15 @@ function QuizesList() {
                     <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
                         {quizes.map((item, index) => {
                             let responded = false;
-                            const startActProps = {};
+                            const startActProps = { label: 'Start/Resume Quiz' };
+                            let isLate = false;
                             // console.log('startdate', item.expectedStartDateTime);
                             // console.log('enddate', item.expectedEndDateTime);
-
-                            startActProps.disabled = dayjs() < dayjs(item.expectedStartDateTime) || (item.expectedEndDateTime != '' && dayjs() > dayjs(item.expectedEndDateTime));
+                            if (dayjs() < dayjs(item.expectedStartDateTime) || (item.expectedEndDateTime != '' && dayjs() > dayjs(item.expectedEndDateTime))) {
+                                // startActProps.disabled = true;
+                                startActProps.label = 'Take late';
+                                isLate = true;
+                            }
                             const foundResponse = responses.find(response => response.quizId == item.id);
                             if (foundResponse) {
                                 responded = true;
@@ -311,7 +289,7 @@ function QuizesList() {
                                         openedClass.classRole == 'student' ?
                                             <>
                                                 {!responded ?
-                                                    <Chip label='Start Quiz' {...startActProps} onClick={(e) => startQuiz(item)} variant='outlined' />
+                                                    <Chip {...startActProps} onClick={(e) => startQuiz(item, isLate)} variant='outlined' />
                                                     :
                                                     <Chip label='View Response' onClick={() => viewResponseUser(item)} variant='outlined' />
                                                 }

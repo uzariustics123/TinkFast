@@ -7,6 +7,7 @@
     --primary: rgba(0, 193, 93) !important;
     color: var(--primary);
     background-color: var(--strong-light-bg);
+    font-family: 'Open Sans';
     /* font-synthesis: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;

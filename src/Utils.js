@@ -1,3 +1,4 @@
+import { Chip } from "@mui/material";
 import { Store } from "react-notifications-component";
 
 export const getQuestionScore = (question, response) => {
@@ -141,3 +142,15 @@ export const popMessage = (title, msg) => {
     },
   });
 };
+export function calculateGradePoint(percentage) {
+  if (percentage >= 98) return "1.0";
+  if (percentage >= 95) return "1.25";
+  if (percentage >= 92) return "1.50";
+  if (percentage >= 89) return "1.75";
+  if (percentage >= 86) return "2.0";
+  if (percentage >= 83) return "2.25";
+  if (percentage >= 80) return "2.50";
+  if (percentage >= 77) return "2.75";
+  if (percentage >= 75) return "3.0";
+  return "5.0"; // Below 70 gets the lowest grade
+}

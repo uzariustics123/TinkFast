@@ -10,6 +10,8 @@ import { useNavigate } from 'react-router-dom';
 import { renderStatus } from './status';
 const ExcelJS = require('exceljs');
 import './styles/classRemarks.css';
+import { calculateGradePoint } from '../Utils';
+import { PerfstatsIndicator } from './UtilComponents';
 // import XLSX from 'xlsx';
 // import * as XLSX from "xlsx";
 
@@ -154,7 +156,7 @@ const ClassRemarks = (props) => {
                 width={props.colDef.computedWidth}
                 plotType={props.plotType}
                 showTooltip={true}
-                colors={['red', 'yellow', 'green']}
+                colors={[colors.green[800]]}
             />
         );
     }
@@ -360,33 +362,52 @@ const ClassRemarks = (props) => {
                     editable: false,
                 },
             );
-            xgridColumn.push(
-                {
-                    field: 'grade',
-                    headerName: 'Final Grade',
-                    renderCell: renderProgress,
-                    renderEditCell: renderEditProgress,
-                    width: 100,
-                    editable: false,
-                },
-            );
         }
         xgridColumn.push(
             {
-                field: 'gradeIndicator',
-                headerName: 'Remarks',
-                renderCell: statusChip,
-                width: 200,
+                field: 'points',
+                headerName: 'Points',
+                width: 100,
                 editable: false,
+            },
+        );
+        xgridColumn.push(
+            {
+                field: 'grade',
+                headerName: 'Final Grade',
+                renderCell: renderProgress,
+                renderEditCell: renderEditProgress,
+                width: 100,
+                editable: false,
+            },
+        );
+
+        xgridColumn.push(
+            {
+                field: 'perfstats',
+                headerName: 'Remarks',
+                description: '',
+                width: 100,
+                editable: false,
+                renderCell: PerfstatsIndicator
             }
         )
+        // xgridColumn.push(
+        //     {
+        //         field: 'gradeIndicator',
+        //         headerName: 'Remarks',
+        //         renderCell: statusChip,
+        //         width: 200,
+        //         editable: false,
+        //     }
+        // )
 
         return xgridColumn;
     };
     const xgetGridRows = () => {
-        console.log('examrate', openedClass.examRate);
-        console.log('ptRate', openedClass.ptRate);
-        console.log('quizrate', openedClass.quizRate);
+        // console.log('examrate', openedClass.examRate);
+        // console.log('ptRate', openedClass.ptRate);
+        // console.log('quizrate', openedClass.quizRate);
 
         const categoryWeights = {
             performanceTask: openedClass.ptRate ?? 0.40,
@@ -522,6 +543,10 @@ const ClassRemarks = (props) => {
 
                     totalScore += response ? response.totalScore : 0;
                     rowData.performance.push(response.score != 0 ? Math.round((response.score / response.totalScore) * 100) : 0);
+
+                }
+                if (rowData[quiz.id] == '- -') {
+                    rowData.perfstats = 'INC';
                 }
                 rowData.perfdetails[quiz.category].push(initialPersonResponse);
             });
@@ -544,6 +569,7 @@ const ClassRemarks = (props) => {
 
             let finalGrade = ((gradeMidterm * .5) + (gradeFinal * .5));
             rowData.grade = finalGrade;
+            rowData.points = calculateGradePoint(finalGrade);
             rowData.perfdetails.gradePrelim = gradePrelim;
             rowData.perfdetails.gradeMidterm = gradeMidterm;
             rowData.perfdetails.gradeFinal = gradeFinal;
@@ -565,6 +591,13 @@ const ClassRemarks = (props) => {
             }
             else {
                 rowData.gradeIndicator = 'Did Not Met Expectation';
+                // Indicates failed
+                if (rowData?.perfstats != 'INC') {
+                    rowData.perfstats = 'F';
+                }
+            }
+            if (rowData?.perfstats != 'INC' && finalGrade >= 75) {
+                rowData.perfstats = 'P';
             }
             rowSheet['Student ID'] = row.studentID;
             // rowData.performance = gainedScor e;
@@ -685,9 +718,11 @@ const ClassRemarks = (props) => {
         {
             groupId: 'Grading',
             children: [
-                { field: 'gradeIndicator' },
+                // { field: 'gradeIndicator' },
                 { field: 'gradePrelim' },
                 { field: 'gradeMidterm' },
+                { field: 'points' },
+                { field: 'perfstats' },
                 { field: 'gradeFinals' },
                 { field: 'grade' },
             ]
@@ -994,6 +1029,7 @@ export default ClassRemarks
 
 const statusChip = (props) => {
     const label = props?.value;
+    let displayText;
     let chipStyle = null;
     let chipProp = {}
     if (label === 'Outstanding') {
@@ -1025,6 +1061,7 @@ const statusChip = (props) => {
         chipProp.icon = < span style={{ color: colors.orange[800] }} className="material-symbols-rounded" > sentiment_neutral</span >
     }
     else if (label === 'Did Not Met Expectation' || label === 'DNME') {
+        displayText = 'Failed';
         chipStyle = {
             color: colors.red[800],
             border: `1px solid ${colors.red[800]}`,
